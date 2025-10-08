@@ -1,0 +1,68 @@
+/* Global styles for text selection control */
+
+/* Disable text selection globally */
+* {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Re-enable text selection for input elements and alerts */
+input,
+textarea,
+[contenteditable],
+[contenteditable="true"],
+[role="alert"],
+.MuiAlert-root {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Re-enable text selection for Joy UI input components */
+.MuiInput-root,
+.MuiInput-root *,
+.MuiTextarea-root,
+.MuiTextarea-root *,
+.MuiFormControl-root input,
+.MuiFormControl-root textarea,
+.MuiFormControl-root .MuiInput-input,
+.MuiFormControl-root .MuiTextarea-textarea {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Re-enable for any element with data-selectable attribute (for custom cases) */
+[data-selectable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Also allow selection in elements that are explicitly marked as selectable */
+.text-selectable {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Allow text selection in Monaco Editor - comprehensive targeting */
+.monaco-editor,
+.monaco-editor *,
+.monaco-editor .view-lines,
+.monaco-editor .view-line,
+.monaco-editor .view-line span,
+.monaco-editor .inputarea,
+.monaco-editor .lines-content,
+.monaco-editor .overflow-guard {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
