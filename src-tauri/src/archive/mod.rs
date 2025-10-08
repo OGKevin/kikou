@@ -87,8 +87,8 @@ mod tests {
         assert_eq!(pages.len(), 2);
 
         assert_eq!(pages[0].bookmark, "note-1");
-        assert_eq!(pages[0].double_page, false);
-        assert_eq!(pages[1].double_page, true);
+        assert!(!pages[0].double_page);
+        assert!(pages[1].double_page);
 
         let _ = std::fs::remove_file(&path);
     }
@@ -383,12 +383,12 @@ mod tests {
         // Check updated pages
         let p1 = find_page(1).expect("page 1 present");
         assert_eq!(p1.bookmark, "updated-1");
-        assert_eq!(p1.double_page, true);
+        assert!(p1.double_page);
         assert_eq!(p1.type_.unwrap(), ComicPageType::FrontCover);
 
         let p2 = find_page(2).expect("page 2 present");
         assert_eq!(p2.bookmark, "updated-2");
-        assert_eq!(p2.double_page, false);
+        assert!(!p2.double_page);
         // ComicPageType::Other is represented as None by from_page_settings, so expect None
         assert!(p2.type_.is_none());
 

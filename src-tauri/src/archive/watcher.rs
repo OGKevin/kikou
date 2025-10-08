@@ -216,11 +216,8 @@ impl<E: ArchiveEventEmitter + Send + Sync + Clone + 'static> ArchiveWatcher<E> {
                             debug!("Debounce period elapsed, handling event for {}", watch_path);
                             // Suppress if flag is set
                             if suppress_flag.swap(false, Ordering::SeqCst) {
-                                match &debounced_event.kind {
-                                    notify::EventKind::Remove(_) => {
-                                        return WatcherResult::FileRemoved;
-                                    }
-                                    _ => {}
+                                if let notify::EventKind::Remove(_) = &debounced_event.kind {
+                                    return WatcherResult::FileRemoved;
                                 }
 
                                 debug!("Suppressing debounced event for {}", watch_path);
