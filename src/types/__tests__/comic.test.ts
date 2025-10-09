@@ -3,6 +3,7 @@ import {
   isBookmarked,
   createBlankPageInfo,
   newPageInfo,
+  toPageType,
 } from "../comic";
 
 describe("Comic Types Utilities", () => {
@@ -35,6 +36,25 @@ describe("Comic Types Utilities", () => {
 
       expect(isBookmarked(storyPageInfo)).toBe(false);
       expect(isBookmarked(bookmarkedPageInfo)).toBe(true);
+    });
+  });
+
+  describe("toPageType", () => {
+    it("returns Unknown for undefined", () => {
+      expect(toPageType(undefined)).toBe(PageType.Unknown);
+    });
+
+    it("returns Unknown for invalid string", () => {
+      expect(toPageType("NotAType")).toBe(PageType.Unknown);
+    });
+
+    it("returns correct PageType for valid string", () => {
+      expect(toPageType("Story")).toBe(PageType.Story);
+      expect(toPageType("Unknown")).toBe(PageType.Unknown);
+    });
+
+    it("is case sensitive", () => {
+      expect(toPageType("story")).toBe(PageType.Unknown);
     });
   });
 });

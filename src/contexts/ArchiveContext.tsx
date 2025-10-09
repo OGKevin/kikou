@@ -12,7 +12,6 @@ import { LoadCbzResponse } from "@/types/comic";
 import { devLog } from "@/utils/devLog";
 import { ErrorResponse, ErrorResponseType } from "@/types/errorResponse";
 import { useArchiveEvents } from "@/hooks/useArchiveEvents";
-import { useBookmarkedFiles } from "@/hooks/useBookmarkedFiles";
 import { getStorageManager } from "@/utils/localStorage";
 
 type ArchiveContextValue = {
@@ -21,14 +20,14 @@ type ArchiveContextValue = {
   loading: boolean;
   error: ErrorResponse | null;
   reload: () => void;
-  bookmarkedFiles: string[];
-  setBookmarkedFiles: (files: string[]) => void;
   previewCache: React.RefObject<Record<string, string>>;
   cacheAccessOrder: React.RefObject<string[]>;
   tocFile: string | null;
   setTocFile: React.Dispatch<React.SetStateAction<string | null>>;
   hasUnsavedXmlChanges: boolean;
   setHasUnsavedXmlChanges: React.Dispatch<React.SetStateAction<boolean>>;
+  selectedPage: number;
+  setSelectedPage: React.Dispatch<React.SetStateAction<number>>;
 };
 
 const ArchiveContext = createContext<ArchiveContextValue | undefined>(
@@ -45,22 +44,25 @@ export function ArchiveProvider({
   const [result, setResult] = useState<LoadCbzResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ErrorResponse | null>(null);
-  const [bookmarkedFiles, setBookmarkedFiles] = useState<string[]>([]);
   const previewCache = useRef<Record<string, string>>({});
   const cacheAccessOrder = useRef<string[]>([]);
   const [tocFile, setTocFile] = useState<string | null>(null);
   const [hasUnsavedXmlChanges, setHasUnsavedXmlChanges] = useState(false);
+  const [selectedPage, setSelectedPage] = useState<number>(0);
 
-  const comicInfo = useMemo(
-    () => result?.comic_info ?? null,
-    [result?.comic_info],
-  );
   const imageFiles = useMemo(
     () => result?.image_files ?? [],
     [result?.image_files],
   );
 
-  useBookmarkedFiles(comicInfo, imageFiles, setBookmarkedFiles);
+  // keep selectedPage within bounds when imageFiles change
+  useEffect(() => {
+    setSelectedPage((p) => {
+      if (!imageFiles || imageFiles.length === 0) return 0;
+
+      return Math.max(0, Math.min(p, imageFiles.length - 1));
+    });
+  }, [imageFiles]);
 
   const load = useCallback(async () => {
     if (!path) return;
@@ -151,14 +153,14 @@ export function ArchiveProvider({
         loading,
         error,
         reload,
-        bookmarkedFiles,
-        setBookmarkedFiles,
         previewCache,
         cacheAccessOrder,
         tocFile,
         setTocFile,
         hasUnsavedXmlChanges,
         setHasUnsavedXmlChanges,
+        selectedPage,
+        setSelectedPage,
       }}
     >
       {children}

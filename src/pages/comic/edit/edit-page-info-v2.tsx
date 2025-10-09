@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useEffect, useState, useCallback } from "react";
 import { Box, Alert, LinearProgress } from "@mui/joy";
 import * as React from "react";
@@ -17,7 +18,6 @@ import {
 } from "../../../contexts/PageSettingsContext";
 import { useNavigationContext } from "../../../contexts/NavigationContext";
 import { useArchiveContext } from "../../../contexts/ArchiveContext";
-import { devLog } from "../../../utils/devLog";
 
 const TOC_ALERT_DURATION = 5000;
 
@@ -33,12 +33,21 @@ export default function EditPageInfoV2Page() {
 
   return (
     <PageSettingsProvider path={path} storageManager={storageManager}>
-      <EditPageInfoV2Content initialTab={tab || "edit"} />
+      <EditPageInfoV2Content
+        initialTab={tab || "edit"}
+        storageManager={storageManager}
+      />
     </PageSettingsProvider>
   );
 }
 
-function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
+function EditPageInfoV2Content({
+  initialTab,
+  storageManager,
+}: {
+  initialTab: string;
+  storageManager: ReturnType<typeof useStorageManager>;
+}) {
   useEffect(() => {
     document.body.style.overflow = "hidden";
     return () => {
@@ -56,7 +65,6 @@ function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
 
     return storedTab || initialTab;
   };
-  const [, setSelectedFile] = useState<string | null>(null);
   const [showTocAlert, setShowTocAlert] = useState(false);
   const [tocAlertProgress, setTocAlertProgress] = useState(100);
 
@@ -68,14 +76,9 @@ function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
 
   const { isSaving } = usePageSettingsContext();
 
-  const storageManager = useStorageManager(path);
-  const {
-    imageFiles,
-    loading: loadingImages,
-    error: imagesError,
-  } = useImageFiles();
+  const { loading: loadingImages, error: imagesError } = useImageFiles();
 
-  const { setTabs, currentTab, setCurrentTab, setOnTabChange } =
+  const { setTabs, setButtons, currentTab, setCurrentTab, setOnTabChange } =
     useNavigationContext();
   const { tocFile } = useArchiveContext() ?? {};
   const hasUnsavedXmlChanges = xmlOps.hasUnsavedChanges;
@@ -111,8 +114,8 @@ function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
       const newUrl = `/comic/edit/edit-page-info-v2?path=${encodeURIComponent(path)}&tab=${tabValue}`;
 
       window.history.replaceState(null, "", newUrl);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       currentTab,
       xmlOps.hasUnsavedChanges,
@@ -122,6 +125,21 @@ function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
       path,
     ],
   );
+
+  // Register navigation buttons for this page
+  useEffect(() => {
+    setButtons([
+      {
+        label: "Back",
+        icon: <ArrowBackIcon />,
+        onClick: () => {
+          router.back();
+        },
+        tooltip: "Go back to comic overview",
+      },
+    ]);
+    return () => setButtons([]);
+  }, [setButtons, router]);
 
   useEffect(() => {
     // Set up the navigation tabs for this page
@@ -157,17 +175,7 @@ function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
 
   // Separate useEffect for initial setup to avoid infinite loops
   useEffect(() => {
-    // Set initial tab if not already set
-    if (!currentTab) {
-      setCurrentTab(getInitialTab());
-    }
-
-    // Clean up tabs on unmount only
-    return () => {
-      setTabs([]);
-      setCurrentTab(null);
-      setOnTabChange(() => null);
-    };
+    setCurrentTab(getInitialTab());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount/unmount
 
@@ -175,42 +183,6 @@ function EditPageInfoV2Content({ initialTab }: { initialTab: string }) {
   useEffect(() => {
     setOnTabChange(() => handleTabChange);
   }, [handleTabChange, setOnTabChange]);
-
-  useEffect(() => {
-    const queryPath = router.query.path as string;
-
-    if (storageManager) {
-      const selectedFile = storageManager.getSelectedFile();
-
-      if (selectedFile) {
-        setSelectedFile(selectedFile);
-      }
-    }
-
-    if (!queryPath) {
-      router.push("/comic/edit");
-    }
-  }, [router, storageManager]);
-
-  useEffect(() => {
-    if (imageFiles.length > 0) {
-      setSelectedFile((current) => {
-        devLog("Current selected file:", current);
-
-        if (current && imageFiles.includes(current)) {
-          return current;
-        }
-
-        const storedSelectedFile = storageManager?.getSelectedFile();
-
-        if (storedSelectedFile && imageFiles.includes(storedSelectedFile)) {
-          return storedSelectedFile;
-        }
-
-        return imageFiles.length > 0 ? imageFiles[0] : null;
-      });
-    }
-  }, [imageFiles, storageManager]);
 
   // Initialize XML validation when XML tab is loaded
   useEffect(() => {

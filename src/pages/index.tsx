@@ -13,7 +13,7 @@ export default function Page() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          height: "calc(100vh - 60px)",
+          height: "100%",
           padding: 3,
         }}
       >

@@ -7,12 +7,22 @@ export interface NavigationTab {
   tooltip?: string;
 }
 
+export interface NavigationButton {
+  label: string;
+  icon?: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  tooltip?: string;
+}
+
 interface NavigationContextType {
   showClearDialog: boolean;
   openClearDialog: () => void;
   closeClearDialog: () => void;
   tabs: NavigationTab[];
   setTabs: (tabs: NavigationTab[]) => void;
+  buttons: NavigationButton[];
+  setButtons: (buttons: NavigationButton[]) => void;
   currentTab: string | null;
   setCurrentTab: (tab: string | null) => void;
   onTabChange:
@@ -49,6 +59,7 @@ export function useNavigationContext() {
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [tabs, setTabs] = useState<NavigationTab[]>([]);
+  const [buttons, setButtons] = useState<NavigationButton[]>([]);
   const [currentTab, setCurrentTab] = useState<string | null>(null);
   const [onTabChange, setOnTabChange] = useState<
     | ((
@@ -74,6 +85,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         closeClearDialog,
         tabs,
         setTabs,
+        buttons,
+        setButtons,
         currentTab,
         setCurrentTab,
         onTabChange,

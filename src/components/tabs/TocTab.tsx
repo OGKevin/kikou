@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Stack } from "@mui/joy";
 import PagePreviewPanel from "../pages/PreviewPanel";
 import PageSettingsPanel from "../pages/SettingsPanel";
@@ -9,7 +9,7 @@ import { useImageFiles } from "@/hooks/useImageFiles";
 import { usePageSettingsContext } from "@/contexts/PageSettingsContext";
 
 export default function TocTab() {
-  const { tocFile } = useArchiveContext()!;
+  const { tocFile, selectedPage, setSelectedPage } = useArchiveContext()!;
   const { imageFiles } = useImageFiles();
   const {
     currentSettings,
@@ -19,22 +19,16 @@ export default function TocTab() {
     hasEditedPages,
     saveAllSettings,
   } = usePageSettingsContext();
-  const [targetPageNumber, setTargetPageNumber] = useState<string>("");
-  const [targetFile, setTargetFile] = useState<string | null>(null);
   const [useFileName, setUseFileName] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const initialInputPageNumber = String(selectedPage + 1);
+  const [inputPageNumber, setInputPageNumber] = useState<string>(
+    initialInputPageNumber,
+  );
 
-  useEffect(() => {
-    if (targetPageNumber && imageFiles.length > 0) {
-      const file = useFileName
-        ? imageFiles.find((f) => f.includes(targetPageNumber))
-        : imageFiles[parseInt(targetPageNumber) - 1] || null;
+  const selectedFile = imageFiles[selectedPage] ?? null;
 
-      setTargetFile(file || null);
-    } else {
-      setTargetFile(null);
-    }
-  }, [targetPageNumber, useFileName, imageFiles]);
+  const targetPageNumber = inputPageNumber;
 
   const saveButton = {
     label: isSaving ? "Saving..." : "Save Settings",
@@ -50,33 +44,51 @@ export default function TocTab() {
     disabled: isSaving || !hasEditedPages,
   };
 
-  const handlePageNumberChange = (val: string, useFileNameVal: boolean) => {
-    setTargetPageNumber(val);
-    setUseFileName(useFileNameVal);
+  const handlePageNumberChange = (val: string) => {
+    setInputPageNumber(val);
   };
 
   const handleUseFileNameChange = (checked: boolean) => {
     setUseFileName(checked);
-
-    if (targetPageNumber) {
-      handlePageNumberChange(targetPageNumber, checked);
-    }
   };
 
+  useEffect(() => {
+    if (inputPageNumber === "") {
+      setSelectedPage(-1);
+      return;
+    }
+
+    let idx = 0;
+
+    if (useFileName) {
+      idx = imageFiles.findIndex((f) => f.includes(inputPageNumber));
+    }
+
+    if (!useFileName) {
+      const parsed = parseInt(inputPageNumber, 10);
+
+      idx = Number.isNaN(parsed) ? -1 : parsed - 1;
+    }
+
+    if (idx < 0 || idx >= imageFiles.length) return;
+
+    setSelectedPage(idx);
+  }, [useFileName, inputPageNumber, imageFiles, setSelectedPage]);
+
   const handleUpdateSettings = (updates: Partial<ComicPageInfo>) => {
-    if (targetFile) {
-      updatePageSettings(targetFile, updates);
+    if (selectedFile) {
+      updatePageSettings(selectedFile, updates);
     }
   };
 
   const handleReset = () => {
-    if (targetFile) {
-      resetPageSettings(targetFile);
+    if (selectedFile) {
+      resetPageSettings(selectedFile);
     }
   };
 
-  const currentTargetSettings = targetFile
-    ? currentSettings[targetFile] || createBlankPageInfo()
+  const currentTargetSettings = selectedFile
+    ? currentSettings[selectedFile] || createBlankPageInfo()
     : createBlankPageInfo();
 
   return (
@@ -108,11 +120,11 @@ export default function TocTab() {
       >
         <PageSelector
           targetPageNumber={targetPageNumber}
-          onPageNumberChange={(val) => handlePageNumberChange(val, useFileName)}
+          onPageNumberChange={(val) => handlePageNumberChange(val)}
           useFileName={useFileName}
           onUseFileNameChange={handleUseFileNameChange}
           imageFiles={imageFiles}
-          targetFile={targetFile}
+          targetFile={selectedFile}
         />
         <Stack
           direction="row"
@@ -125,11 +137,11 @@ export default function TocTab() {
           }}
         >
           <PagePreviewPanel
-            targetFile={targetFile}
+            targetFile={selectedFile}
             targetPageNumber={targetPageNumber}
           />
           <PageSettingsPanel
-            targetFile={targetFile}
+            targetFile={selectedFile}
             errorMessage={localError}
             currentSettings={currentTargetSettings}
             onUpdateSettings={handleUpdateSettings}

@@ -137,3 +137,14 @@ export const createLoadingPageInfo = (): ComicPageInfo => ({
     return arePageInfoEqual(this, current);
   },
 });
+
+// Utility to convert string to PageType enum
+export function toPageType(type: string | undefined): PageType {
+  if (!type) return PageType.Unknown;
+
+  if (type && Object.prototype.hasOwnProperty.call(PageType, type)) {
+    return PageType[type as keyof typeof PageType];
+  }
+
+  return PageType.Unknown;
+}

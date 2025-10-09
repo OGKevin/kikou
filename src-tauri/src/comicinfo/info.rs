@@ -607,9 +607,18 @@ mod tests {
         let input_xml = "";
         let result = format_comicinfo_xml_str(input_xml);
         let expected = ComicInfoParseError::EmptyXml.to_string();
-        assert!(result.is_err(), "Expected error for empty XML, got: {:?}", result);
+        assert!(
+            result.is_err(),
+            "Expected error for empty XML, got: {:?}",
+            result
+        );
         let err_msg = result.unwrap_err();
-        assert!(err_msg.contains(&expected), "Expected error message to contain '{}', got: '{}'", expected, err_msg);
+        assert!(
+            err_msg.contains(&expected),
+            "Expected error message to contain '{}', got: '{}'",
+            expected,
+            err_msg
+        );
     }
 
     #[test]
@@ -617,9 +626,18 @@ mod tests {
         let input_xml = "<ComicInfo><Title>Test Comic</Title>";
         let result = format_comicinfo_xml_str(input_xml);
         let expected = ComicInfoParseError::NoRootElement.to_string();
-        assert!(result.is_err(), "Expected error for malformed XML, got: {:?}", result);
+        assert!(
+            result.is_err(),
+            "Expected error for malformed XML, got: {:?}",
+            result
+        );
         let err_msg = result.unwrap_err();
-        assert!(err_msg.contains(&expected), "Expected error message to contain '{}', got: '{}'", expected, err_msg);
+        assert!(
+            err_msg.contains(&expected),
+            "Expected error message to contain '{}', got: '{}'",
+            expected,
+            err_msg
+        );
     }
 
     #[test]
@@ -627,8 +645,17 @@ mod tests {
         let input_xml = r#"<ComicInfo><Title>Test Comic</Title></ComicInfo> trailing"#;
         let result = format_comicinfo_xml_str(input_xml);
         let expected = ComicInfoParseError::TrailingContent.to_string();
-        assert!(result.is_err(), "Expected error for trailing content, got: {:?}", result);
+        assert!(
+            result.is_err(),
+            "Expected error for trailing content, got: {:?}",
+            result
+        );
         let err_msg = result.unwrap_err();
-        assert!(err_msg.contains(&expected), "Expected error message to contain '{}', got: '{}'", expected, err_msg);
+        assert!(
+            err_msg.contains(&expected),
+            "Expected error message to contain '{}', got: '{}'",
+            expected,
+            err_msg
+        );
     }
 }

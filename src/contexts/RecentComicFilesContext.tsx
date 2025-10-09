@@ -120,9 +120,7 @@ export function useRecentComicFiles() {
       return;
     }
 
-    router.push(
-      `/comic/edit/edit-page-info-v2?path=${encodeURIComponent(path)}&tab=edit`,
-    );
+    router.push(`/comic/overview?path=${encodeURIComponent(path)}&tab=edit`);
   };
 
   return { ...context, pickAndSelectFile, goToEditPage };

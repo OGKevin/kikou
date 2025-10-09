@@ -50,7 +50,7 @@ function PageContent() {
       if (selected) {
         addRecentFile(selected);
         router.push(
-          `/comic/edit/edit-page-info-v2?path=${encodeURIComponent(selected)}&tab=edit`,
+          `/comic/overview?path=${encodeURIComponent(selected)}&tab=edit`,
         );
       }
     } catch {
@@ -63,9 +63,7 @@ function PageContent() {
   const handleRecentFileSelect = async (path: string) => {
     setError(null);
     addRecentFile(path);
-    router.push(
-      `/comic/edit/edit-page-info-v2?path=${encodeURIComponent(path)}&tab=edit`,
-    );
+    router.push(`/comic/overview?path=${encodeURIComponent(path)}&tab=edit`);
   };
 
   return (
@@ -77,7 +75,7 @@ function PageContent() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          minHeight: "calc(100vh - 60px)",
+          height: "100%",
           padding: 3,
         }}
       >

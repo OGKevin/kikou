@@ -1,116 +1,101 @@
 import { render } from "@testing-library/react";
 import { useBookmarkedFiles } from "../useBookmarkedFiles";
-import { ComicInfo } from "../../types/comic";
+
+jest.mock("@/hooks/useComicInfo");
+jest.mock("@/contexts/ArchiveContext");
 
 function TestComponent({
-  comicInfo,
-  imageFiles,
   onBookmarked,
 }: {
-  comicInfo: ComicInfo | null;
-  imageFiles: string[];
   onBookmarked: (files: string[]) => void;
 }) {
-  useBookmarkedFiles(comicInfo, imageFiles, onBookmarked);
+  const result = useBookmarkedFiles();
+  onBookmarked(result);
   return null;
 }
 
 describe("useBookmarkedFiles", () => {
+  const mockUseComicInfo = require("@/hooks/useComicInfo").useComicInfo;
+  const mockUseArchiveContext =
+    require("@/contexts/ArchiveContext").useArchiveContext;
+
   it("should call setBookmarkedFiles with empty array when no comicInfo", () => {
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      result: { image_files: ["a.jpg"] },
+    });
     let result: string[] = [];
     const setBookmarkedFiles = (files: string[]) => {
       result = files;
     };
-
-    render(
-      <TestComponent
-        comicInfo={null}
-        imageFiles={["a.jpg"]}
-        onBookmarked={setBookmarkedFiles}
-      />,
-    );
+    render(<TestComponent onBookmarked={setBookmarkedFiles} />);
     expect(result).toEqual([]);
   });
 
   it("should only return bookmarks for pages with valid image index", () => {
-    const comicInfo: ComicInfo = {
-      Pages: [
-        { Image: 0, Bookmark: "bm1" }, // valid
-        { Image: 1, Bookmark: "bm2" }, // valid
-        { Image: 2, Bookmark: "" }, // not bookmarked
-        { Image: 3 }, // not bookmarked
-        { Image: 4, Bookmark: "bm3" }, // valid
-        { Bookmark: "bm4" }, // no image index
-      ],
-    };
-    const imageFiles = [
-      "imgA.jpg",
-      "imgB.jpg",
-      "imgC.jpg",
-      "imgD.jpg",
-      "imgE.jpg",
-    ];
+    // Simulate parsedComicInfo as { file: ComicPageInfo }
+    mockUseComicInfo.mockReturnValue({
+      parsedComicInfo: {
+        "imgA.jpg": { Bookmark: "bm1" },
+        "imgB.jpg": { Bookmark: "bm2" },
+        "imgC.jpg": { Bookmark: "" },
+        "imgD.jpg": {},
+        "imgE.jpg": { Bookmark: "bm3" },
+      },
+    });
+    mockUseArchiveContext.mockReturnValue({
+      result: {
+        image_files: [
+          "imgA.jpg",
+          "imgB.jpg",
+          "imgC.jpg",
+          "imgD.jpg",
+          "imgE.jpg",
+        ],
+      },
+    });
     let result: string[] = [];
     const setBookmarkedFiles = (files: string[]) => {
       result = files;
     };
-
-    render(
-      <TestComponent
-        comicInfo={comicInfo}
-        imageFiles={imageFiles}
-        onBookmarked={setBookmarkedFiles}
-      />,
-    );
-    // Sorted image files: ["imgA.jpg", "imgB.jpg", "imgC.jpg", "imgD.jpg", "imgE.jpg"]
+    render(<TestComponent onBookmarked={setBookmarkedFiles} />);
     expect(result).toEqual(["imgA.jpg", "imgB.jpg", "imgE.jpg"]);
   });
 
   it("should ignore bookmarks for pages with missing or invalid image index", () => {
-    const comicInfo: ComicInfo = {
-      Pages: [
-        { Bookmark: "bm1" }, // no image index
-        { Image: 10, Bookmark: "bm2" }, // out of bounds
-        { Image: 0, Bookmark: "bm3" }, // valid
-      ],
-    };
-    const imageFiles = ["imgA.jpg"];
+    mockUseComicInfo.mockReturnValue({
+      parsedComicInfo: {
+        "imgA.jpg": { Bookmark: "bm3" },
+        "imgB.jpg": { Bookmark: "bm1" }, // not in image_files
+      },
+    });
+    mockUseArchiveContext.mockReturnValue({
+      result: { image_files: ["imgA.jpg"] },
+    });
     let result: string[] = [];
     const setBookmarkedFiles = (files: string[]) => {
       result = files;
     };
-
-    render(
-      <TestComponent
-        comicInfo={comicInfo}
-        imageFiles={imageFiles}
-        onBookmarked={setBookmarkedFiles}
-      />,
-    );
+    render(<TestComponent onBookmarked={setBookmarkedFiles} />);
     expect(result).toEqual(["imgA.jpg"]);
   });
 
   it("should return empty array if no bookmarks", () => {
-    const comicInfo: ComicInfo = {
-      Pages: [
-        { Image: 0, Bookmark: "" },
-        { Image: 1 },
-        { Image: 2, Bookmark: "   " },
-      ],
-    };
-    const imageFiles = ["imgA.jpg", "imgB.jpg", "imgC.jpg"];
+    mockUseComicInfo.mockReturnValue({
+      parsedComicInfo: {
+        "imgA.jpg": { Bookmark: "" },
+        "imgB.jpg": {},
+        "imgC.jpg": { Bookmark: "   " },
+      },
+    });
+    mockUseArchiveContext.mockReturnValue({
+      result: { image_files: ["imgA.jpg", "imgB.jpg", "imgC.jpg"] },
+    });
     let result: string[] = [];
     const setBookmarkedFiles = (files: string[]) => {
       result = files;
     };
-
-    render(
-      <TestComponent
-        comicInfo={comicInfo}
-        imageFiles={imageFiles}
-        onBookmarked={setBookmarkedFiles}
-      />,
-    );
+    render(<TestComponent onBookmarked={setBookmarkedFiles} />);
     expect(result).toEqual([]);
   });
 });
