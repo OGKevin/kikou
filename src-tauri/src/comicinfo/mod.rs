@@ -112,13 +112,12 @@ A secret double life begins—one he can't tell anyone about!
             Some("AKB49: The Rules Against Love".to_string())
         );
         assert_eq!(comic.number, Some("1.0".to_string()));
-        assert_eq!(
+        assert!(
             comic
                 .summary
                 .as_ref()
                 .unwrap()
-                .contains("A boy joins AKB48"),
-            true
+                .contains("A boy joins AKB48")
         );
         assert_eq!(comic.year, 2010);
         assert_eq!(comic.month, 12);
@@ -142,7 +141,7 @@ A secret double life begins—one he can't tell anyone about!
         assert_eq!(pages[0].bookmark, "Cover".to_string());
         assert_eq!(pages[1].image, 1);
         assert_eq!(pages[1].type_, Some(ComicPageType::Other));
-        assert_eq!(pages[1].double_page, true);
+        assert!(pages[1].double_page);
         assert_eq!(pages[4].image, 7);
         assert_eq!(
             pages[4].bookmark,
@@ -152,9 +151,11 @@ A secret double life begins—one he can't tell anyone about!
 
     #[test]
     fn test_to_xml() {
-        let mut comic = ComicInfo::default();
-        comic.title = Some("Test".to_string());
-        comic.count = 5;
+        let comic = ComicInfo {
+            title: Some("Test".to_string()),
+            count: 5,
+            ..ComicInfo::default()
+        };
         let xml = comic.to_xml().unwrap();
         assert!(xml.contains("<Title>Test</Title>"));
         assert!(xml.contains("<Count>5</Count>"));
@@ -208,19 +209,21 @@ A secret double life begins—one he can't tell anyone about!
 
     #[test]
     fn test_serialize_multiple_types() {
-        let mut comic = ComicInfo::default();
-        comic.pages = Some(Pages {
-            page: vec![ComicPageInfo {
-                image: 0,
-                type_: Some(ComicPageType::FrontCover),
-                double_page: false,
-                image_size: 0,
-                key: "".to_string(),
-                bookmark: "".to_string(),
-                image_width: -1,
-                image_height: -1,
-            }],
-        });
+        let comic = ComicInfo {
+            pages: Some(Pages {
+                page: vec![ComicPageInfo {
+                    image: 0,
+                    type_: Some(ComicPageType::FrontCover),
+                    double_page: false,
+                    image_size: 0,
+                    key: "".to_string(),
+                    bookmark: "".to_string(),
+                    image_width: -1,
+                    image_height: -1,
+                }],
+            }),
+            ..ComicInfo::default()
+        };
         let xml = comic.to_xml().unwrap();
         assert!(xml.contains("Type=\"FrontCover\""));
     }
@@ -229,31 +232,33 @@ A secret double life begins—one he can't tell anyone about!
     fn test_get_bookmarked_pages() {
         let image_files = vec!["page001.jpg".to_string(), "page002.jpg".to_string()];
 
-        let mut comic = ComicInfo::default();
-        comic.pages = Some(Pages {
-            page: vec![
-                ComicPageInfo {
-                    image: 0,
-                    bookmark: "Chapter 1".to_string(),
-                    type_: Some(ComicPageType::Story),
-                    double_page: false,
-                    image_size: 0,
-                    key: "".to_string(),
-                    image_width: -1,
-                    image_height: -1,
-                },
-                ComicPageInfo {
-                    image: 1,
-                    bookmark: "".to_string(),
-                    type_: Some(ComicPageType::Story),
-                    double_page: false,
-                    image_size: 0,
-                    key: "".to_string(),
-                    image_width: -1,
-                    image_height: -1,
-                },
-            ],
-        });
+        let comic = ComicInfo {
+            pages: Some(Pages {
+                page: vec![
+                    ComicPageInfo {
+                        image: 0,
+                        bookmark: "Chapter 1".to_string(),
+                        type_: Some(ComicPageType::Story),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                    },
+                    ComicPageInfo {
+                        image: 1,
+                        bookmark: "".to_string(),
+                        type_: Some(ComicPageType::Story),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                    },
+                ],
+            }),
+            ..ComicInfo::default()
+        };
 
         let bookmarked = get_bookmarked_pages(&comic, &image_files);
         assert_eq!(bookmarked.len(), 1);

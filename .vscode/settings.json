@@ -15,7 +15,7 @@
   "inlineChat.enableV2": true,
   "rust-analyzer.testExplorer": true,
   "rust-analyzer.cargo.targetDir": true,
-  "rust-analyzer.cargo.allTargets": false,
+  "rust-analyzer.cargo.allTargets": true,
   "rust-analyzer.interpret.tests": true,
   "jest.enable": true,
   "testing.alwaysRevealTestOnStateChange": true,
@@ -23,5 +23,7 @@
   "testing.automaticallyOpenTestResults": "openOnTestFailure",
   "testing.followRunningTest": false,
   "jest.rootPath": "src",
-  "jest.runMode": "on-demand"
+  "jest.runMode": "on-demand",
+  "rust-analyzer.cargo.features": "all",
+  "rust-analyzer.check.command": "clippy"
 }

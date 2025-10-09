@@ -1,11 +1,15 @@
-name: Build
+name: Release
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  build-binaries:
+  release-binaries:
     strategy:
       fail-fast: false
       matrix:
@@ -34,15 +38,15 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             src-tauri/target
-          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-release-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-build-
+            ${{ runner.os }}-cargo-release-
             ${{ runner.os }}-cargo-
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev
+          sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libappindicator3-dev librsvg2-dev patchelf
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build Tauri app
@@ -52,8 +56,8 @@ jobs:
         with:
           includeDebug: false
           includeRelease: true
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.platform }}-app
-          path: src-tauri/target/release/bundle/
+          tagName: ${{ github.ref_name }}
+          releaseName: "Kikou ${{ github.ref_name }}"
+          releaseBody: "See the assets to download this version and install."
+          releaseDraft: true
+          prerelease: false

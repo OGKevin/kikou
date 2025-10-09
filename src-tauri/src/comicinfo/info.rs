@@ -581,3 +581,54 @@ pub fn get_bookmarked_pages(comic_info: &ComicInfo, image_files: &[String]) -> V
         })
         .collect()
 }
+
+/// Formats a ComicInfo XML string and returns the formatted XML or an error string.
+pub fn format_comicinfo_xml_str(xml: &str) -> Result<String, String> {
+    let comic_info = ComicInfo::parse(xml).map_err(|e| format!("Parse error: {}", e))?;
+    comic_info
+        .to_xml()
+        .map_err(|e| format!("Serialization error: {}", e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_format_comicinfo_xml_str() {
+        let input_xml = r#"<ComicInfo><Title>Test Comic</Title></ComicInfo>"#;
+        let expected_output = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<ComicInfo>\n  <Title>Test Comic</Title>\n</ComicInfo>";
+        let result = format_comicinfo_xml_str(input_xml);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), expected_output);
+    }
+
+    #[test]
+    fn test_format_comicinfo_xml_str_empty_xml() {
+        let input_xml = "";
+        let result = format_comicinfo_xml_str(input_xml);
+        let expected = ComicInfoParseError::EmptyXml.to_string();
+        assert!(result.is_err(), "Expected error for empty XML, got: {:?}", result);
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains(&expected), "Expected error message to contain '{}', got: '{}'", expected, err_msg);
+    }
+
+    #[test]
+    fn test_format_comicinfo_xml_str_malformed_xml() {
+        let input_xml = "<ComicInfo><Title>Test Comic</Title>";
+        let result = format_comicinfo_xml_str(input_xml);
+        let expected = ComicInfoParseError::NoRootElement.to_string();
+        assert!(result.is_err(), "Expected error for malformed XML, got: {:?}", result);
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains(&expected), "Expected error message to contain '{}', got: '{}'", expected, err_msg);
+    }
+
+    #[test]
+    fn test_format_comicinfo_xml_str_trailing_content() {
+        let input_xml = r#"<ComicInfo><Title>Test Comic</Title></ComicInfo> trailing"#;
+        let result = format_comicinfo_xml_str(input_xml);
+        let expected = ComicInfoParseError::TrailingContent.to_string();
+        assert!(result.is_err(), "Expected error for trailing content, got: {:?}", result);
+        let err_msg = result.unwrap_err();
+        assert!(err_msg.contains(&expected), "Expected error message to contain '{}', got: '{}'", expected, err_msg);
+    }
+}

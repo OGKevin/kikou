@@ -258,8 +258,8 @@ mod tests {
         assert_eq!(pages.len(), 2);
 
         assert_eq!(pages[0].bookmark, "note-1");
-        assert_eq!(pages[0].double_page, false);
-        assert_eq!(pages[1].double_page, true);
+        assert!(!pages[0].double_page);
+        assert!(pages[1].double_page);
 
         let _ = std::fs::remove_file(&path);
     }
