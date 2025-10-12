@@ -22,8 +22,6 @@ export default function ComicOverviewPage() {
     setOnTabChange(() => (_e, v) => {
       setCurrentTab(v as string);
     });
-
-    return () => {};
   }, [setTabs, setCurrentTab, setOnTabChange]);
 
   if (loading) {
