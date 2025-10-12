@@ -115,7 +115,6 @@ function EditPageInfoV2Content({
 
       window.history.replaceState(null, "", newUrl);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       currentTab,
       xmlOps.hasUnsavedChanges,
@@ -123,7 +122,7 @@ function EditPageInfoV2Content({
       setCurrentTab,
       sessionTabKey,
       path,
-    ],
+    ], // eslint-disable-next-line react-hooks/exhaustive-deps
   );
 
   // Register navigation buttons for this page

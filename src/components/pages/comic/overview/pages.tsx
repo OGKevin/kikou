@@ -25,17 +25,20 @@ export default function PagesTab() {
     setUiSelectedPage(selectedPage);
   }, [selectedPage]);
 
+  const updateSelectedPage = (v: number) => {
+    setSelectedPage(v);
+    setUiSelectedPage(v);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
-        setSelectedPage((prev) => Math.max(0, prev - 1));
-        setUiSelectedPage((prev) => Math.max(0, prev - 1));
+        updateSelectedPage(Math.max(0, uiSelectedPage - 1));
         e.preventDefault();
       }
 
       if (e.key === "ArrowRight") {
-        setSelectedPage((prev) => Math.min(imageFiles.length - 1, prev + 1));
-        setUiSelectedPage((prev) => Math.min(imageFiles.length - 1, prev + 1));
+        updateSelectedPage(Math.min(imageFiles.length - 1, uiSelectedPage + 1));
         e.preventDefault();
       }
     };
@@ -45,7 +48,7 @@ export default function PagesTab() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [imageFiles.length, setSelectedPage]);
+  }, [imageFiles.length, uiSelectedPage, setSelectedPage]);
 
   const marks = useMemo(
     () =>
@@ -140,11 +143,15 @@ export default function PagesTab() {
             max={imageFiles.length - 1}
             value={uiSelectedPage}
             onChange={(_e, v) => {
-              setUiSelectedPage(v as number);
+              if (typeof v === "number") {
+                setUiSelectedPage(v);
+              }
             }}
-            onChangeCommitted={(_e, v) => setSelectedPage(v as number)}
-            marks={marks}
-            valueLabelDisplay="auto"
+            onChangeCommitted={(_e, v) => {
+              if (typeof v === "number") {
+                updateSelectedPage(v);
+              }
+            }}
           />
         </Box>
       </Stack>

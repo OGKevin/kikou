@@ -3,6 +3,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import { ComicPageInfo } from "@/types/comic";
 import { useArchiveContext } from "@/contexts/ArchiveContext";
 import { useRouter } from "next/router";
+import { useMemo } from "react";
 
 interface ReadOnlyPageSettingsPanelProps {
   pageInfo: ComicPageInfo;
@@ -15,6 +16,8 @@ export default function ReadOnlyPageSettingsPanel({
   const router = useRouter();
   const archivePath = archive?.path;
 
+  const isEmpty = useMemo(() => pageInfo.IsEmpty(), [pageInfo]);
+
   const handleEdit = () => {
     if (archivePath) {
       router.push(
@@ -26,7 +29,7 @@ export default function ReadOnlyPageSettingsPanel({
   return (
     <Card
       variant="outlined"
-      color={pageInfo.IsEmpty() ? "neutral" : "primary"}
+      color={isEmpty ? "neutral" : "primary"}
       sx={{ width: 300, maxHeight: "100%", overflowY: "auto", p: 0 }}
     >
       <CardContent>
@@ -51,7 +54,7 @@ export default function ReadOnlyPageSettingsPanel({
           </Stack>
           <Button
             variant="soft"
-            color={pageInfo.IsEmpty() ? "primary" : "neutral"}
+            color={isEmpty ? "primary" : "neutral"}
             startDecorator={<EditIcon />}
             sx={{ mt: 3, width: "100%" }}
             onClick={handleEdit}

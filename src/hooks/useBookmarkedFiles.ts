@@ -18,12 +18,19 @@ export function useBookmarkedFiles() {
       imageFiles,
     });
 
-    return Object.entries(parsedComicInfo)
-      .filter(([, pageInfo]: [string, ComicPageInfo]) => {
-        return pageInfo.Bookmark && pageInfo.Bookmark.trim() !== "";
-      })
-      .map(([file]) => file)
-      .filter((file) => imageFiles.includes(file));
+    return Object.entries(parsedComicInfo).reduce<string[]>(
+      (acc, [file, pageInfo]) => {
+        if (
+          pageInfo.Bookmark &&
+          pageInfo.Bookmark.trim() !== "" &&
+          imageFiles.includes(file)
+        ) {
+          acc.push(file);
+        }
+        return acc;
+      },
+      [],
+    );
   }, [parsedComicInfo, imageFiles]);
 
   devLog("Extracted bookmarks", bookmarkedFiles);

@@ -142,7 +142,7 @@ export const createLoadingPageInfo = (): ComicPageInfo => ({
 export function toPageType(type: string | undefined): PageType {
   if (!type) return PageType.Unknown;
 
-  if (type && Object.prototype.hasOwnProperty.call(PageType, type)) {
+  if (type && Object.hasOwn(PageType, type)) {
     return PageType[type as keyof typeof PageType];
   }
 
