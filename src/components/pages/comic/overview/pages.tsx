@@ -14,10 +14,7 @@ export default function PagesTab() {
   const { parsedComicInfo } = useComicInfo();
   const archive = useArchiveContext();
   const selectedPage = archive?.selectedPage ?? 0;
-  const setSelectedPage = useMemo(
-    () => archive?.setSelectedPage ?? (() => {}),
-    [archive],
-  );
+  const setSelectedPage = archive?.setSelectedPage ?? (() => {});
   const bookmarkedFiles = useBookmarkedFiles();
 
   const [uiSelectedPage, setUiSelectedPage] = useState(selectedPage);
