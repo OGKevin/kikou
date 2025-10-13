@@ -2,9 +2,12 @@
 
 import { useRouter } from "next/router";
 import { Box, Button, Typography, Card } from "@mui/joy";
+import { useResetNavigation } from "@/hooks/useResetNavigation";
 
 export default function Page() {
   const router = useRouter();
+
+  useResetNavigation();
 
   return (
     <>
