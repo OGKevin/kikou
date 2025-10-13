@@ -27,10 +27,12 @@ const ComicEditTabs: React.FC<ComicEditTabsProps> = ({
     <Tabs
       value={currentTab}
       onChange={onTabChange}
+      size="sm"
       sx={{ bgcolor: "transparent" }}
     >
       <TabList
         disableUnderline
+        size="sm"
         sx={{
           p: 0.5,
           gap: 0.5,

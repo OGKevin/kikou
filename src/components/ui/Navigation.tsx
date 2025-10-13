@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
+
 import {
   Box,
   Button,
@@ -12,6 +13,7 @@ import {
   Typography,
   Divider,
   Stack,
+  Grid,
 } from "@mui/joy";
 import { useTheme } from "@/contexts/ThemeContext";
 import LightModeIcon from "@mui/icons-material/LightMode";
@@ -22,6 +24,8 @@ import ComicsDrawer from "@/components/drawers/ComicsDrawer";
 import { RecentComicFilesProvider } from "@/contexts/RecentComicFilesContext";
 import ComicEditTabs from "@/components/navigation/ComicEditTabs";
 import { useNavigationContext } from "@/contexts/NavigationContext";
+
+const NAVIGATION_BAR_HEIGHT = "65px";
 
 export default function Navigation() {
   const router = useRouter();
@@ -35,10 +39,6 @@ export default function Navigation() {
     setCurrentTab,
     onTabChange,
   } = useNavigationContext();
-
-  const leftRef = useRef<HTMLDivElement>(null);
-  const rightRef = useRef<HTMLDivElement>(null);
-  const [cornerWidth, setCornerWidth] = useState<number | undefined>(undefined);
 
   const navigationItems = [{ label: "Home", path: "/", show: true }];
 
@@ -84,14 +84,6 @@ export default function Navigation() {
     return mode.charAt(0).toUpperCase() + mode.slice(1);
   };
 
-  useEffect(() => {
-    const left = leftRef.current?.offsetWidth ?? 0;
-    const right = rightRef.current?.offsetWidth ?? 0;
-    const max = Math.max(left, right);
-
-    if (max > 0) setCornerWidth(max);
-  }, [buttons, mounted]);
-
   return (
     <RecentComicFilesProvider>
       <>
@@ -107,97 +99,106 @@ export default function Navigation() {
             position: "sticky",
             top: 0,
             zIndex: 1000,
-            minHeight: "60px",
+            height: NAVIGATION_BAR_HEIGHT,
           }}
         >
-          <Box
-            ref={leftRef}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 2,
-              flexGrow: 0,
-              flexShrink: 1,
-              minWidth: 0,
-              width: cornerWidth ? `${cornerWidth}px` : undefined,
-            }}
+          <Grid
+            id="navigation-grid"
+            container
+            alignItems="center"
+            sx={{ width: "100%", height: "100%" }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <IconButton
-                variant="outlined"
-                color="neutral"
-                size="sm"
-                onClick={() => setDrawerOpen(true)}
+            <Grid xs={12} sm={4} md={3}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  flexGrow: 0,
+                  flexShrink: 1,
+                  minWidth: 0,
+                }}
               >
-                ☰
-              </IconButton>
-              <Typography level="title-md" sx={{ fontWeight: "bold" }}>
-                Kikou
-              </Typography>
-            </Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <IconButton
+                    variant="outlined"
+                    color="neutral"
+                    size="sm"
+                    onClick={() => setDrawerOpen(true)}
+                  >
+                    ☰
+                  </IconButton>
+                  <Typography level="title-md" sx={{ fontWeight: "bold" }}>
+                    Kikou
+                  </Typography>
+                </Box>
 
-            {buttons.length > 0 && <Divider orientation="vertical" />}
+                {buttons.length > 0 && <Divider orientation="vertical" />}
 
-            {buttons.map((btn, idx) => (
-              <Button
-                key={btn.label + idx}
-                variant="outlined"
-                color="neutral"
-                size="sm"
-                startDecorator={btn.icon}
-                onClick={btn.onClick}
-                disabled={btn.disabled}
-                title={btn.tooltip}
+                {buttons.map((btn, idx) => (
+                  <Button
+                    key={btn.label + idx}
+                    variant="outlined"
+                    color="neutral"
+                    size="sm"
+                    startDecorator={btn.icon}
+                    onClick={btn.onClick}
+                    disabled={btn.disabled}
+                    title={btn.tooltip}
+                  >
+                    {btn.label}
+                  </Button>
+                ))}
+              </Box>
+            </Grid>
+
+            <Grid xs={12} sm={4} md={6}>
+              {tabs.length > 0 && (
+                <Box
+                  sx={{
+                    flexGrow: 1,
+                    display: "flex",
+                    justifyContent: "center",
+                    minWidth: 0,
+                  }}
+                >
+                  <ComicEditTabs
+                    currentTab={currentTab ?? undefined}
+                    onTabChange={
+                      onTabChange ||
+                      ((_, newValue) => setCurrentTab(newValue as string))
+                    }
+                    tabsDisabled={false}
+                    tabs={tabs}
+                  />
+                </Box>
+              )}
+            </Grid>
+
+            <Grid xs={12} sm={4} md={3}>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "flex-end",
+                  flexGrow: 0,
+                  flexShrink: 1,
+                  minWidth: 0,
+                }}
               >
-                {btn.label}
-              </Button>
-            ))}
-          </Box>
-
-          {tabs.length > 0 && (
-            <Box
-              sx={{
-                flexGrow: 1,
-                display: "flex",
-                justifyContent: "center",
-                minWidth: 0,
-              }}
-            >
-              <ComicEditTabs
-                currentTab={currentTab ?? undefined}
-                onTabChange={
-                  onTabChange ||
-                  ((_, newValue) => setCurrentTab(newValue as string))
-                }
-                tabsDisabled={false}
-                tabs={tabs}
-              />
-            </Box>
-          )}
-
-          <Box
-            ref={rightRef}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-end",
-              flexGrow: 0,
-              flexShrink: 1,
-              minWidth: 0,
-              width: cornerWidth ? `${cornerWidth}px` : undefined,
-            }}
-          >
-            <Button
-              variant="outlined"
-              color="neutral"
-              size="sm"
-              loading={!mounted}
-              onClick={handleThemeToggle}
-              startDecorator={getThemeIcon()}
-            >
-              {getThemeLabel()}
-            </Button>
-          </Box>
+                <Button
+                  variant="outlined"
+                  color="neutral"
+                  size="sm"
+                  loading={!mounted}
+                  onClick={handleThemeToggle}
+                  startDecorator={getThemeIcon()}
+                >
+                  {getThemeLabel()}
+                </Button>
+              </Box>
+            </Grid>
+          </Grid>
         </Stack>
 
         {/* Drawer */}
