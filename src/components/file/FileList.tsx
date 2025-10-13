@@ -109,7 +109,7 @@ const FileList: React.FC<FileListProps> = ({ imageFiles, storageManager }) => {
 
       setSelectedPage(idx);
     }
-  }, [filteredFiles, selectedFile, setSelectedPage, imageFiles]);
+  }, [filteredFiles, selectedFile, imageFiles]);
 
   // Auto-scroll to selected file
   useEffect(() => {

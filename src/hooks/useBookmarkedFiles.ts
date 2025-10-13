@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { devLog } from "../utils/devLog";
-import { ComicPageInfo } from "../types/comic";
 import { useComicInfo } from "@/hooks/useComicInfo";
 import { useArchiveContext } from "@/contexts/ArchiveContext";
 
@@ -12,10 +11,12 @@ export function useBookmarkedFiles() {
     [archive?.result?.image_files],
   );
 
+  const imageFilesSet = useMemo(() => new Set(imageFiles), [imageFiles]);
+
   const bookmarkedFiles = useMemo(() => {
     devLog("Extracting bookmarks from parsedComicInfo and imageFiles", {
       parsedComicInfo,
-      imageFiles,
+      imageFilesSet,
     });
 
     return Object.entries(parsedComicInfo).reduce<string[]>(
@@ -23,15 +24,16 @@ export function useBookmarkedFiles() {
         if (
           pageInfo.Bookmark &&
           pageInfo.Bookmark.trim() !== "" &&
-          imageFiles.includes(file)
+          imageFilesSet.has(file)
         ) {
           acc.push(file);
         }
+
         return acc;
       },
       [],
     );
-  }, [parsedComicInfo, imageFiles]);
+  }, [parsedComicInfo, imageFilesSet]);
 
   devLog("Extracted bookmarks", bookmarkedFiles);
 

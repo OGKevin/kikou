@@ -122,7 +122,7 @@ function EditPageInfoV2Content({
       setCurrentTab,
       sessionTabKey,
       path,
-    ], // eslint-disable-next-line react-hooks/exhaustive-deps
+    ],
   );
 
   // Register navigation buttons for this page
@@ -175,7 +175,6 @@ function EditPageInfoV2Content({
   // Separate useEffect for initial setup to avoid infinite loops
   useEffect(() => {
     setCurrentTab(getInitialTab());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only run on mount/unmount
 
   // Register tab change handler whenever it changes

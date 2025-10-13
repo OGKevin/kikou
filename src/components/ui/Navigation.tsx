@@ -99,9 +99,7 @@ export default function Navigation() {
           direction="row"
           component="nav"
           sx={{
-            display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
             padding: 1.5,
             backgroundColor: "background.surface",
             borderBottom: "1px solid",

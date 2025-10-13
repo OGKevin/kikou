@@ -48,7 +48,7 @@ export default function PagesTab() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [imageFiles.length, uiSelectedPage, setSelectedPage]);
+  }, [imageFiles.length, uiSelectedPage]);
 
   const marks = useMemo(
     () =>
@@ -142,6 +142,11 @@ export default function PagesTab() {
             min={0}
             max={imageFiles.length - 1}
             value={uiSelectedPage}
+            marks={marks}
+            step={1}
+            valueLabelDisplay="auto"
+            valueLabelFormat={(v) => `Page ${v + 1}`}
+            sx={{ width: "100%" }}
             onChange={(_e, v) => {
               if (typeof v === "number") {
                 setUiSelectedPage(v);
