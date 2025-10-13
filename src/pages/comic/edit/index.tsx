@@ -17,6 +17,7 @@ import {
   CircularProgress,
   Alert,
 } from "@mui/joy";
+import { useResetNavigation } from "@/hooks/useResetNavigation";
 
 export default function Page() {
   return (
@@ -31,6 +32,8 @@ function PageContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { addRecentFile } = useRecentComicFiles();
+
+  useResetNavigation();
 
   const handlePickFile = async () => {
     setLoading(true);
