@@ -16,6 +16,16 @@ updates:
     open-pull-requests-limit: 10
     assignees:
       - OGKevin
+    groups:
+      cargo-patch:
+        update-types:
+          - "patch"
+      cargo-minor:
+        update-types:
+          - "minor"
+      cargo-major:
+        update-types:
+          - "major"
 
   - package-ecosystem: "npm"
     directory: "/"
@@ -24,3 +34,13 @@ updates:
     open-pull-requests-limit: 10
     assignees:
       - OGKevin
+    groups:
+      npm-patch:
+        update-types:
+          - "patch"
+      npm-minor:
+        update-types:
+          - "minor"
+      npm-major:
+        update-types:
+          - "major"
