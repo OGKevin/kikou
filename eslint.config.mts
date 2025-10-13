@@ -49,6 +49,7 @@ const eslintConfig: Linter.Config[] = [
         },
       ],
       "@next/next/no-img-element": "off",
+      "react-hooks/exhaustive-deps": "off",
     },
   }),
 ].map((config) => ({

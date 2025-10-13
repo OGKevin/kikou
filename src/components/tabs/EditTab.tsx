@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Box, Stack } from "@mui/joy";
 import ComicHeader from "../pages/Header";
 import PageSettingsPanel from "../pages/SettingsPanel";
@@ -8,6 +8,7 @@ import { createBlankPageInfo } from "../../types/comic";
 import { LocalStorageManager } from "../../utils/localStorage";
 import { usePageSettingsContext } from "@/contexts/PageSettingsContext";
 import { useImageFiles } from "@/hooks/useImageFiles";
+import { useArchiveContext } from "@/contexts/ArchiveContext";
 
 interface EditTabProps {
   storageManager: LocalStorageManager;
@@ -25,29 +26,8 @@ export default function EditTab({ storageManager }: EditTabProps) {
     saveAllSettings,
   } = usePageSettingsContext();
   const [localError, setLocalError] = useState<string | null>(null);
-  const [selectedFile, setSelectedFile] = useState<string | null>(null);
-
-  // Select initial file from storageManager or imageFiles
-  useEffect(() => {
-    if (storageManager) {
-      const storedFile = storageManager.getSelectedFile();
-
-      if (storedFile && imageFiles.includes(storedFile)) {
-        setSelectedFile(storedFile);
-        return;
-      }
-    }
-
-    if (imageFiles.length > 0) {
-      setSelectedFile(imageFiles[0]);
-    }
-  }, [imageFiles, storageManager]);
-
-  useEffect(() => {
-    if (storageManager && selectedFile) {
-      storageManager.setSelectedFile(selectedFile);
-    }
-  }, [selectedFile, storageManager]);
+  const { selectedPage } = useArchiveContext()!;
+  const selectedFile = imageFiles[selectedPage] ?? null;
 
   const saveButton = {
     label: isSaving ? "Saving..." : "Save Settings",
@@ -73,12 +53,7 @@ export default function EditTab({ storageManager }: EditTabProps) {
         height: "100%",
       }}
     >
-      <FileList
-        imageFiles={imageFiles}
-        selectedFile={selectedFile}
-        onSelectFile={setSelectedFile}
-        storageManager={storageManager}
-      />
+      <FileList imageFiles={imageFiles} storageManager={storageManager} />
       <Box
         sx={{
           flex: 1,

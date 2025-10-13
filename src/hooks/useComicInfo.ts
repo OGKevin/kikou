@@ -88,20 +88,19 @@ export function useComicInfo() {
   const archive = useArchiveContext();
 
   useEffect(() => {
-    devLog("useComicInfo: archive changed", {
-      comicInfo: archive?.result?.comic_info,
-      imageFiles: archive?.result?.image_files,
-      loading: archive?.loading,
-      error: archive?.error,
-    });
+    devLog("useComicInfo: comicInfo changed", archive);
 
     if (!archive) {
+      devLog("useComicInfo: no archive");
+
       setParsedComicInfo({});
       setLoading(false);
       return;
     }
 
     if (archive.loading) {
+      devLog("useComicInfo: archive loading");
+
       setLoading(true);
       return;
     }
@@ -116,6 +115,8 @@ export function useComicInfo() {
         result.comic_info || null,
       );
 
+      devLog("useComicInfo: parsed comic info", parsed);
+
       setParsedComicInfo(parsed);
       setError(null);
       setLoading(false);
@@ -123,12 +124,15 @@ export function useComicInfo() {
     }
 
     if (archive.error) {
+      devLog("useComicInfo: archive error", archive.error);
+
       setParsedComicInfo({});
       setError(archive.error.message);
       setLoading(false);
       return;
     }
 
+    devLog("useComicInfo: no archive, no loading, no error");
     // default
     setParsedComicInfo({});
     setLoading(false);

@@ -1,40 +1,41 @@
-import { useEffect } from "react";
+import { useMemo } from "react";
 import { devLog } from "../utils/devLog";
-import { ComicInfo, ComicInfoPage } from "../types/comic";
+import { useComicInfo } from "@/hooks/useComicInfo";
+import { useArchiveContext } from "@/contexts/ArchiveContext";
 
-export function useBookmarkedFiles(
-  comicInfo: ComicInfo | null | undefined,
-  imageFiles: string[],
-  setBookmarkedFiles: (files: string[]) => void,
-) {
-  useEffect(() => {
-    if (!comicInfo || !comicInfo.Pages) {
-      setBookmarkedFiles([]);
-      return;
-    }
+export function useBookmarkedFiles() {
+  const { parsedComicInfo } = useComicInfo();
+  const archive = useArchiveContext();
+  const imageFiles = useMemo(
+    () => archive?.result?.image_files ?? [],
+    [archive?.result?.image_files],
+  );
 
-    devLog("Extracting bookmarks from comicInfo and imageFiles");
+  const imageFilesSet = useMemo(() => new Set(imageFiles), [imageFiles]);
 
-    // Normalize pages array
-    const pagesArr: ComicInfoPage[] = Array.isArray(comicInfo.Pages)
-      ? comicInfo.Pages
-      : comicInfo.Pages.Page;
+  const bookmarkedFiles = useMemo(() => {
+    devLog("Extracting bookmarks from parsedComicInfo and imageFiles", {
+      parsedComicInfo,
+      imageFilesSet,
+    });
 
-    // Sort image files as in Rust
-    const sortedImageFiles = [...imageFiles].sort();
+    return Object.entries(parsedComicInfo).reduce<string[]>(
+      (acc, [file, pageInfo]) => {
+        if (
+          pageInfo.Bookmark &&
+          pageInfo.Bookmark.trim() !== "" &&
+          imageFilesSet.has(file)
+        ) {
+          acc.push(file);
+        }
 
-    // Only consider bookmarks for pages whose image filename is in sortedImageFiles
-    const bookmarkedFiles = pagesArr
-      .filter((page: ComicInfoPage) => {
-        const hasBookmark = page.Bookmark && page.Bookmark.trim() !== "";
-        const hasImage =
-          page.Image !== undefined && sortedImageFiles[page.Image];
+        return acc;
+      },
+      [],
+    );
+  }, [parsedComicInfo, imageFilesSet]);
 
-        return hasBookmark && hasImage;
-      })
-      .map((page: ComicInfoPage) => sortedImageFiles[page.Image!]);
+  devLog("Extracted bookmarks", bookmarkedFiles);
 
-    setBookmarkedFiles(bookmarkedFiles);
-    devLog("Extracted bookmarks", bookmarkedFiles);
-  }, [comicInfo, imageFiles, setBookmarkedFiles]);
+  return bookmarkedFiles;
 }

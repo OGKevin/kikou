@@ -1,5 +1,12 @@
 import React, { useEffect } from "react";
-import { Box, Typography, CircularProgress, Sheet, Alert } from "@mui/joy";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Sheet,
+  Alert,
+  AspectRatio,
+} from "@mui/joy";
 import { usePreviewCache } from "@/hooks/usePreviewCache";
 import { ErrorResponse } from "@/types/errorResponse";
 import ComicHeader from "@/components/pages/Header";
@@ -50,30 +57,19 @@ export default function PagePreviewPanel({
 
   return (
     <Sheet
-      variant="outlined"
+      id="PagePreviewPanel"
+      variant="plain"
       sx={{
         width: width ?? undefined,
+        height: "100%",
         flex: 1,
-        p: 2,
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        minHeight: 0,
       }}
     >
-      {title ? (
+      {title && (
         <ComicHeader title={title} buttons={buttons ?? []} titleLevel="h2" />
-      ) : (
-        <Typography
-          level="h4"
-          sx={{
-            margin: "0 0 16px 0",
-            flexShrink: 0,
-            textAlign: "center",
-          }}
-        >
-          Page Preview
-        </Typography>
       )}
 
       {isLoading ? (
@@ -102,15 +98,13 @@ export default function PagePreviewPanel({
           <Alert color="warning">{displayedError.message}</Alert>
         </Box>
       ) : targetFile && previewUrl ? (
-        <Box
+        <AspectRatio
+          objectFit="contain"
+          flex={true}
           sx={{
-            flex: 1,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
             overflow: "hidden",
-            minHeight: 0,
           }}
+          variant="plain"
         >
           <Box
             component="img"
@@ -118,17 +112,15 @@ export default function PagePreviewPanel({
             src={previewUrl}
             alt={`Page ${targetPageNumber}`}
             sx={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              alignSelf: "center",
-              objectFit: "contain",
+              width: "100%",
+              height: "100%",
               transition: shouldTransition ? "0.5s ease" : "none",
               ...getTransformStyle(),
             }}
             onClick={handleImgClick}
             onMouseDown={handleMouseDown}
           />
-        </Box>
+        </AspectRatio>
       ) : (
         <Box
           sx={{

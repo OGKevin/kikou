@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from "react";
-import { LocalStorageManager } from "@/utils/localStorage";
 import { usePageSettingsContext } from "@/contexts/PageSettingsContext";
 import { useArchiveContext } from "@/contexts/ArchiveContext";
 import {
@@ -19,21 +18,27 @@ import {
 } from "@mui/joy";
 import { Bookmark, Edit, MenuBook } from "@mui/icons-material";
 import { isBookmarked } from "@/types/comic";
+import { useBookmarkedFiles } from "@/hooks/useBookmarkedFiles";
 
 interface FileListProps {
   imageFiles: string[];
-  selectedFile: string | null;
-  onSelectFile: (file: string) => void;
-  storageManager: LocalStorageManager;
+  storageManager: {
+    getShowFiltered: () => boolean;
+    setShowFiltered: (value: boolean) => void;
+    getShowBookmarkFiltered: () => boolean;
+    setShowBookmarkFiltered: (value: boolean) => void;
+    setTocFile: (file: string) => void;
+  };
 }
 
-const FileList: React.FC<FileListProps> = ({
-  imageFiles,
-  selectedFile,
-  onSelectFile,
-  storageManager,
-}) => {
-  const { tocFile, setTocFile } = useArchiveContext()!;
+const FileList: React.FC<FileListProps> = ({ imageFiles, storageManager }) => {
+  const { tocFile, setTocFile, selectedPage, setSelectedPage } =
+    useArchiveContext()!;
+  const bookmarkedFilesFromBackend = useBookmarkedFiles();
+  const [selectedFile, setSelectedFile] = useState<string | null>(
+    imageFiles[selectedPage] ?? null,
+  );
+
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -42,13 +47,7 @@ const FileList: React.FC<FileListProps> = ({
   const [showFiltered, setShowFiltered] = useState(false);
   const [showBookmarkFiltered, setShowBookmarkFiltered] = useState(false);
   const { currentSettings, isPageEdited } = usePageSettingsContext();
-  const { bookmarkedFiles: bookmarkedFilesFromBackend } = useArchiveContext()!;
   const listRef = useRef<HTMLUListElement>(null);
-
-  useEffect(() => {
-    setShowFiltered(storageManager.getShowFiltered());
-    setShowBookmarkFiltered(storageManager.getShowBookmarkFiltered());
-  }, [storageManager, imageFiles]);
 
   const handleContextMenu = (e: React.MouseEvent, file: string) => {
     e.preventDefault();
@@ -63,7 +62,18 @@ const FileList: React.FC<FileListProps> = ({
     }
   };
 
-  React.useEffect(() => {
+  // Initialize filter states from storage on mount or imageFiles change
+  useEffect(() => {
+    setShowFiltered(storageManager.getShowFiltered());
+    setShowBookmarkFiltered(storageManager.getShowBookmarkFiltered());
+  }, [storageManager, imageFiles]);
+
+  // Sync selectedFile with selectedPage changes
+  useEffect(() => {
+    setSelectedFile(imageFiles[selectedPage] ?? null);
+  }, [selectedPage, imageFiles]);
+
+  useEffect(() => {
     if (contextMenu) {
       const handleClick = () => setContextMenu(null);
 
@@ -95,9 +105,11 @@ const FileList: React.FC<FileListProps> = ({
       !filteredFiles.includes(selectedFile) &&
       filteredFiles.length > 0
     ) {
-      onSelectFile(filteredFiles[0]);
+      const idx = imageFiles.indexOf(filteredFiles[0]);
+
+      setSelectedPage(idx);
     }
-  }, [filteredFiles, selectedFile, onSelectFile]);
+  }, [filteredFiles, selectedFile, imageFiles]);
 
   // Auto-scroll to selected file
   useEffect(() => {
@@ -202,7 +214,9 @@ const FileList: React.FC<FileListProps> = ({
               const nextIdx =
                 currentIdx < filteredFiles.length - 1 ? currentIdx + 1 : 0;
 
-              onSelectFile(filteredFiles[nextIdx]);
+              const idx = imageFiles.indexOf(filteredFiles[nextIdx]);
+
+              setSelectedPage(idx);
               e.preventDefault();
             }
 
@@ -210,7 +224,9 @@ const FileList: React.FC<FileListProps> = ({
               const prevIdx =
                 currentIdx > 0 ? currentIdx - 1 : filteredFiles.length - 1;
 
-              onSelectFile(filteredFiles[prevIdx]);
+              const idx = imageFiles.indexOf(filteredFiles[prevIdx]);
+
+              setSelectedPage(idx);
               e.preventDefault();
             }
           }}
@@ -226,7 +242,11 @@ const FileList: React.FC<FileListProps> = ({
               <ListItem key={file}>
                 <ListItemButton
                   selected={isSelected}
-                  onClick={() => onSelectFile(file)}
+                  onClick={() => {
+                    const idx = imageFiles.indexOf(file);
+
+                    setSelectedPage(idx);
+                  }}
                   onContextMenu={(e) => handleContextMenu(e, file)}
                   sx={{
                     py: 1,

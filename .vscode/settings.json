@@ -3,6 +3,7 @@
   "github.copilot.chat.agent.terminal.allowList": {
     "pnpm test": true,
     "pnpm build": true,
+    "pnpm lint": true,
     "pnpm tsc --noEmit": true,
     "cargo test --manifest-path=src-tauri/Cargo.toml": true,
     "cargo check --manifest-path=src-tauri/Cargo.toml": true,

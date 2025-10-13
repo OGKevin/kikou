@@ -81,12 +81,9 @@ export default function PageSelector({
         </Box>
       </Stack>
 
-      {targetPageNumber && (
-        <Typography level="body-sm" color="neutral">
-          Total pages: {imageFiles.length}
-          {targetFile && ` | Selected: ${targetFile}`}
-        </Typography>
-      )}
+      <Typography level="body-sm" color="neutral">
+        {`Total pages: ${imageFiles.length}${targetFile ? ` | Selected: ${targetFile}` : ""}`}
+      </Typography>
     </Box>
   );
 }
