@@ -9,6 +9,7 @@ import LoadingSpinner from "../../../components/ui/LoadingSpinner";
 import EditTab from "../../../components/tabs/EditTab";
 import TocTab from "../../../components/tabs/TocTab";
 import XmlTab from "../../../components/tabs/XmlTab";
+import { StreamingProgressBar } from "../../../components/streaming/StreamingProgressBar";
 import { useStorageManager } from "../../../hooks/useStorageManager";
 import { useImageFiles } from "../../../hooks/useImageFiles";
 import { useComicInfoXML } from "../../../hooks/useComicInfoXML";
@@ -76,7 +77,11 @@ function EditPageInfoV2Content({
 
   const { isSaving } = usePageSettingsContext();
 
-  const { loading: loadingImages, error: imagesError } = useImageFiles();
+  const {
+    loading: loadingImages,
+    error: imagesError,
+    imageFiles,
+  } = useImageFiles();
 
   const { setTabs, setButtons, currentTab, setCurrentTab, setOnTabChange } =
     useNavigationContext();
@@ -248,6 +253,7 @@ function EditPageInfoV2Content({
         overflow: "hidden",
       }}
     >
+      <StreamingProgressBar fileNames={imageFiles} />
       {showTocAlert && (
         <Box
           sx={{

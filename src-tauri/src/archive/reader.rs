@@ -49,19 +49,182 @@ pub fn get_file_data(path: &str, file_name: &str) -> Result<Vec<u8>, ReadArchive
     Ok(data)
 }
 
+pub fn stream_file_data_from_archive(
+    path: &str,
+    file_names: Vec<String>,
+    on_data: impl Fn(String, Vec<u8>),
+    on_error: impl Fn(String, String),
+) -> Result<(), ReadArchiveError> {
+    let mut archive = open_zip_archive(path)?;
+
+    for file_name in file_names {
+        match archive.by_name(&file_name) {
+            Ok(mut zip_file) => {
+                let mut data = Vec::new();
+                if let Err(e) = zip_file.read_to_end(&mut data) {
+                    on_error(file_name, e.to_string());
+
+                    continue;
+                }
+
+                on_data(file_name, data);
+            }
+            Err(e) => {
+                on_error(file_name, e.to_string());
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
+    use std::io::Write;
+    use std::rc::Rc;
+    use zip::ZipWriter;
+    use zip::write::FileOptions;
 
-    #[test]
-    fn test_read_archive_basic() {
-        // Basic test to verify read_archive function exists and has correct signature
-        let _: fn(&str) -> Result<Archive, ReadArchiveError> = read_archive;
+    struct TestArchive {
+        _temp_file: tempfile::NamedTempFile,
+        path: String,
+    }
+
+    impl TestArchive {
+        fn new(files: Vec<(&str, &[u8])>) -> Self {
+            let temp_file = tempfile::NamedTempFile::new().unwrap();
+            let path = temp_file.path().to_str().unwrap().to_string();
+
+            let file = temp_file.reopen().unwrap();
+            let mut zip = ZipWriter::new(file);
+
+            for (name, content) in files {
+                let options =
+                    FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+                zip.start_file(name, options).unwrap();
+                zip.write_all(content).unwrap();
+            }
+
+            zip.finish().unwrap();
+
+            TestArchive {
+                _temp_file: temp_file,
+                path,
+            }
+        }
+
+        fn path(&self) -> &str {
+            &self.path
+        }
     }
 
     #[test]
-    fn test_get_file_data_basic() {
-        // Basic test to verify get_file_data function exists and has correct signature
-        let _: fn(&str, &str) -> Result<Vec<u8>, ReadArchiveError> = get_file_data;
+    fn test_stream_file_data_success() {
+        let archive =
+            TestArchive::new(vec![("file1.txt", b"content1"), ("file2.txt", b"content2")]);
+
+        let data_calls = Rc::new(RefCell::new(Vec::new()));
+        let error_calls = Rc::new(RefCell::new(Vec::new()));
+
+        let data_calls_clone = data_calls.clone();
+        let error_calls_clone = error_calls.clone();
+
+        let on_data = move |file_name: String, data: Vec<u8>| {
+            data_calls_clone.borrow_mut().push((file_name, data));
+        };
+
+        let on_error = move |file_name: String, error: String| {
+            error_calls_clone.borrow_mut().push((file_name, error));
+        };
+
+        let result = stream_file_data_from_archive(
+            archive.path(),
+            vec!["file1.txt".to_string(), "file2.txt".to_string()],
+            on_data,
+            on_error,
+        );
+
+        assert!(
+            result.is_ok(),
+            "Expected Ok result from streaming file data, but got Err {:?}",
+            result
+        );
+        assert_eq!(data_calls.borrow().len(), 2);
+        assert_eq!(error_calls.borrow().len(), 0);
+
+        let calls = data_calls.borrow();
+        assert_eq!(calls[0].0, "file1.txt");
+        assert_eq!(calls[0].1, b"content1");
+        assert_eq!(calls[1].0, "file2.txt");
+        assert_eq!(calls[1].1, b"content2");
+    }
+
+    #[test]
+    fn test_stream_file_data_missing_file() {
+        let archive = TestArchive::new(vec![("file1.txt", b"content1")]);
+
+        let data_calls = Rc::new(RefCell::new(Vec::new()));
+        let error_calls = Rc::new(RefCell::new(Vec::new()));
+
+        let data_calls_clone = data_calls.clone();
+        let error_calls_clone = error_calls.clone();
+
+        let on_data = move |file_name: String, data: Vec<u8>| {
+            data_calls_clone.borrow_mut().push((file_name, data));
+        };
+
+        let on_error = move |file_name: String, error: String| {
+            error_calls_clone.borrow_mut().push((file_name, error));
+        };
+
+        let result = stream_file_data_from_archive(
+            archive.path(),
+            vec!["nonexistent.txt".to_string()],
+            on_data,
+            on_error,
+        );
+
+        assert!(result.is_ok());
+        assert_eq!(data_calls.borrow().len(), 0);
+        assert_eq!(error_calls.borrow().len(), 1);
+    }
+
+    #[test]
+    fn test_stream_file_data_empty_list() {
+        let archive = TestArchive::new(vec![("file1.txt", b"content1")]);
+
+        let data_calls = Rc::new(RefCell::new(Vec::new()));
+        let error_calls = Rc::new(RefCell::new(Vec::new()));
+
+        let on_data = |file_name: String, data: Vec<u8>| {
+            data_calls.borrow_mut().push((file_name, data));
+        };
+
+        let on_error = |file_name: String, error: String| {
+            error_calls.borrow_mut().push((file_name, error));
+        };
+
+        let result = stream_file_data_from_archive(archive.path(), vec![], on_data, on_error);
+
+        assert!(result.is_ok());
+        assert_eq!(data_calls.borrow().len(), 0);
+        assert_eq!(error_calls.borrow().len(), 0);
+    }
+
+    #[test]
+    fn test_stream_file_data_invalid_archive() {
+        let on_data = |_: String, _: Vec<u8>| {};
+        let on_error = |_: String, _: String| {};
+
+        let result = stream_file_data_from_archive(
+            "nonexistent_archive.zip",
+            vec!["file.txt".to_string()],
+            on_data,
+            on_error,
+        );
+
+        assert!(result.is_err());
     }
 }

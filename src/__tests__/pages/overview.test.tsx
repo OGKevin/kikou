@@ -1,9 +1,7 @@
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import ComicOverviewPage from "@/pages/comic/overview";
 import { useImageFiles } from "@/hooks/useImageFiles";
-import { useNavigationContext } from "@/contexts/NavigationContext";
 
 jest.mock("@/hooks/useImageFiles");
 jest.mock("@/components/pages/comic/overview/info", () => () => (
@@ -12,6 +10,14 @@ jest.mock("@/components/pages/comic/overview/info", () => () => (
 jest.mock("@/components/pages/comic/overview/pages", () => () => (
   <div>PagesTabContent</div>
 ));
+
+// Mock useArchiveContext to prevent ArchiveContext not found error
+jest.mock("@/contexts/ArchiveContext", () => ({
+  useArchiveContext: () => ({
+    path: "/dummy/path",
+    previewCache: { current: {} },
+  }),
+}));
 
 // Custom NavigationContext for testing
 interface NavigationContextType {
@@ -35,7 +41,7 @@ function NavigationContextTestProvider({
 }: {
   children: React.ReactNode;
   initialTab?: string;
-  setCurrentTabRef?: React.MutableRefObject<((tab: string) => void) | null>;
+  setCurrentTabRef?: React.RefObject<((tab: string) => void) | null>;
 }) {
   const [currentTab, setCurrentTab] = React.useState(initialTab);
   if (setCurrentTabRef) setCurrentTabRef.current = setCurrentTab;

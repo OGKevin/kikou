@@ -21,7 +21,6 @@ type ArchiveContextValue = {
   error: ErrorResponse | null;
   reload: () => void;
   previewCache: React.RefObject<Record<string, string>>;
-  cacheAccessOrder: React.RefObject<string[]>;
   tocFile: string | null;
   setTocFile: React.Dispatch<React.SetStateAction<string | null>>;
   hasUnsavedXmlChanges: boolean;
@@ -45,7 +44,6 @@ export function ArchiveProvider({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ErrorResponse | null>(null);
   const previewCache = useRef<Record<string, string>>({});
-  const cacheAccessOrder = useRef<string[]>([]);
   const [tocFile, setTocFile] = useState<string | null>(null);
   const [hasUnsavedXmlChanges, setHasUnsavedXmlChanges] = useState(false);
   const [selectedPage, setSelectedPage] = useState<number>(0);
@@ -136,9 +134,9 @@ export function ArchiveProvider({
   });
 
   useEffect(() => {
-    // Reset in-memory cache when filePath changes
+    // Reset in-memory cache when filePath changes - no eviction needed
+    // Cache is only invalidated when archive changes or unmounts
     previewCache.current = {};
-    cacheAccessOrder.current = [];
     setHasUnsavedXmlChanges(false); // Reset unsaved changes when switching files
     const manager = path ? getStorageManager() : null;
 
@@ -154,7 +152,6 @@ export function ArchiveProvider({
         error,
         reload,
         previewCache,
-        cacheAccessOrder,
         tocFile,
         setTocFile,
         hasUnsavedXmlChanges,

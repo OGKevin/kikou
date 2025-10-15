@@ -46,7 +46,6 @@ describe("usePreviewCache infinite loop detection", () => {
 
   it("should detect infinite loops when context objects are recreated on every render", async () => {
     let renderCount = 0;
-    let effectCount = 0;
 
     // Mock context that recreates objects on every call (common mistake)
     mockUseArchiveContext.mockImplementation(() => {
@@ -58,14 +57,13 @@ describe("usePreviewCache infinite loop detection", () => {
         loading: false,
         error: null,
         reload: jest.fn(),
-        bookmarkedFiles: [],
-        setBookmarkedFiles: jest.fn(),
         previewCache: { current: {} }, // useRef object
-        cacheAccessOrder: { current: [] }, // useRef object
         tocFile: null,
         setTocFile: jest.fn(),
         hasUnsavedXmlChanges: false,
         setHasUnsavedXmlChanges: jest.fn(),
+        selectedPage: 0,
+        setSelectedPage: jest.fn(),
       };
     });
 
@@ -91,7 +89,7 @@ describe("usePreviewCache infinite loop detection", () => {
             expect(maxUpdateDepthError).toBeDefined();
           } else {
             // If no error yet, check render count
-            expect(renderCount).toBeCloseTo(3); // More than expected renders indicates a problem
+            expect(renderCount).toBe(2); // More than expected renders indicates a problem
           }
         },
         { timeout: 1000 },
@@ -107,7 +105,6 @@ describe("usePreviewCache infinite loop detection", () => {
   it("should not cause infinite loop with stable references", async () => {
     let renderCount = 0;
     const stablePreviewCache = { current: {} };
-    const stableCacheAccessOrder = { current: [] };
 
     // Mock context with stable references
     mockUseArchiveContext.mockImplementation(() => {
@@ -119,14 +116,13 @@ describe("usePreviewCache infinite loop detection", () => {
         loading: false,
         error: null,
         reload: jest.fn(),
-        bookmarkedFiles: [],
-        setBookmarkedFiles: jest.fn(),
         previewCache: stablePreviewCache, // Same object reference
-        cacheAccessOrder: stableCacheAccessOrder, // Same array reference
         tocFile: null,
         setTocFile: jest.fn(),
         hasUnsavedXmlChanges: false,
         setHasUnsavedXmlChanges: jest.fn(),
+        selectedPage: 0,
+        setSelectedPage: jest.fn(),
       };
     });
 
@@ -165,14 +161,13 @@ describe("usePreviewCache infinite loop detection", () => {
         loading: false,
         error: null,
         reload: jest.fn(),
-        bookmarkedFiles: [],
-        setBookmarkedFiles: jest.fn(),
         previewCache: { current: {} }, // useRef object
-        cacheAccessOrder: { current: [] }, // useRef object
         tocFile: null,
         setTocFile: jest.fn(),
         hasUnsavedXmlChanges: false,
         setHasUnsavedXmlChanges: jest.fn(),
+        selectedPage: 0,
+        setSelectedPage: jest.fn(),
       };
     });
 
@@ -187,7 +182,7 @@ describe("usePreviewCache infinite loop detection", () => {
         console.log("Infinite loop detected due to changing dependencies");
       }
 
-      expect(renderCount).toBe(3); // Should detect excessive renders
+      expect(renderCount).toBe(2); // Should detect excessive renders
     } finally {
       useEffectSpy.mockRestore();
     }

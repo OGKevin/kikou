@@ -4,6 +4,7 @@ import { useImageFiles } from "@/hooks/useImageFiles";
 import { useNavigationContext } from "@/contexts/NavigationContext";
 import InfoTab from "../../components/pages/comic/overview/info";
 import PagesTab from "../../components/pages/comic/overview/pages";
+import { StreamingProgressBar } from "@/components/streaming/StreamingProgressBar";
 
 export default function ComicOverviewPage() {
   const { imageFiles, loading, error } = useImageFiles();
@@ -42,8 +43,11 @@ export default function ComicOverviewPage() {
       sx={{
         height: "100%",
         width: "100%",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
+      <StreamingProgressBar fileNames={imageFiles} />
       <Tabs
         value={currentTab}
         onChange={(_e, v) => setCurrentTab(v as string)}

@@ -1,12 +1,33 @@
 use crate::archive::manager::start_archive_watch_for_creation;
 
 use super::manager::{start_archive_watcher, stop_archive_watcher};
-use super::reader::{get_file_data, read_archive};
+use super::reader::{get_file_data, read_archive, stream_file_data_from_archive};
 use super::types::{LoadCbzResponse, ToErrorResponse, is_image_file};
 use super::writer::{delete_comicinfo_xml, save_comicinfo_xml_impl, save_page_settings_impl};
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64_STANDARD};
 use log::debug;
+use serde::Serialize;
 use std::collections::HashMap;
 use std::io::Read;
+use tauri::ipc::Channel;
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase", tag = "event", content = "data")]
+pub enum StreamProgressEvent {
+    Started {
+        total_files: usize,
+    },
+    Preview {
+        file_name: String,
+        data_raw: Vec<u8>,
+        data_base64: String,
+    },
+    Error {
+        file_name: String,
+        message: String,
+    },
+    Finished,
+}
 
 #[tauri::command]
 pub fn load_cbz(app: tauri::AppHandle, path: String) -> LoadCbzResponse {
@@ -138,4 +159,50 @@ pub fn watch_for_creation(app: tauri::AppHandle, path: String) -> Result<(), Str
     } else {
         Err(format!("Failed to start watcher for {}", path))
     }
+}
+
+#[tauri::command]
+pub async fn stream_file_data(
+    path: String,
+    file_names: Vec<String>,
+    on_event: Channel<StreamProgressEvent>,
+) {
+    tauri::async_runtime::spawn_blocking(move || {
+        let total = file_names.len();
+        if let Err(e) = on_event.send(StreamProgressEvent::Started { total_files: total }) {
+            debug!("Failed to send Started event: {}", e);
+            return;
+        }
+
+        let on_data = |file_name, data: Vec<u8>| {
+            let data_base64 = BASE64_STANDARD.encode(&data);
+
+            if let Err(e) = on_event.send(StreamProgressEvent::Preview {
+                file_name,
+                data_raw: data,
+                data_base64,
+            }) {
+                debug!("Failed to send Preview event: {}", e);
+            }
+        };
+
+        let on_error = |file_name, message| {
+            if let Err(e) = on_event.send(StreamProgressEvent::Error { file_name, message }) {
+                debug!("Failed to send Error event: {}", e);
+            }
+        };
+
+        if let Err(e) = stream_file_data_from_archive(&path, file_names, on_data, on_error) {
+            let _ = on_event.send(StreamProgressEvent::Error {
+                file_name: path,
+                message: e.to_string(),
+            });
+        }
+
+        if let Err(e) = on_event.send(StreamProgressEvent::Finished) {
+            debug!("Failed to send Finished event: {}", e);
+        }
+    })
+    .await
+    .ok();
 }

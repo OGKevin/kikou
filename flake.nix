@@ -24,12 +24,12 @@
 
           src = ./.;
 
-          cargoHash = "sha256-8Aqt0b37eTmE3cmVZpKURnXqi+YGTY0eYlKLmaqfOPc=";
+          cargoHash = "sha256-BOgb88XuxcjOnp8cykXsSVM22tnnnIFdjP1WzRuuSns=";
 
           pnpmDeps = pkgs.pnpm.fetchDeps {
             inherit (finalAttrs) pname version src;
             fetcherVersion = 2;
-            hash = "sha256-wPv8NBByHSdL/jaThfZGt2XEI3vem9QnLKDxrlyCm9c=";
+            hash = "sha256-NbHpZiF81H+ltF3WxbTkoNrwiuZl2SsCrPtK8fixcAQ=";
           };
 
           nativeBuildInputs = [

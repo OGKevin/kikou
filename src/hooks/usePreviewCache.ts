@@ -40,12 +40,9 @@ function createDataUrl(data: number[], fileName: string): string {
 type SetString = Dispatch<SetStateAction<string | null>>;
 type SetError = Dispatch<SetStateAction<ErrorResponse | null>>;
 
-const MAX_CACHE_ITEMS = 10;
-
 function checkCachedPreview(
   path: string | undefined,
-  previewCache: React.MutableRefObject<Record<string, string>>,
-  cacheAccessOrder: React.MutableRefObject<string[]>,
+  previewCache: React.RefObject<Record<string, string>>,
   fileName: string | null,
   setPreviewUrl: SetString,
   setLoadingPreview: SetString,
@@ -57,12 +54,6 @@ function checkCachedPreview(
   }
 
   if (previewCache.current[fileName]) {
-    const newAccessOrder = [
-      fileName,
-      ...cacheAccessOrder.current.filter((f) => f !== fileName),
-    ];
-
-    cacheAccessOrder.current = newAccessOrder;
     setPreviewUrl(previewCache.current[fileName]);
     setLoadingPreview(null);
     return true;
@@ -74,7 +65,6 @@ function checkCachedPreview(
 async function fetchPreview(
   path: string | undefined,
   previewCache: React.RefObject<Record<string, string>>,
-  cacheAccessOrder: React.RefObject<string[]>,
   fileName: string,
   setPreviewUrl: SetString,
   setPreviewError: SetError,
@@ -120,38 +110,12 @@ async function fetchPreview(
 
   const dataUrl = createDataUrl(data, fileName);
 
-  updateCache(previewCache, cacheAccessOrder, fileName, dataUrl);
+  if (previewCache.current) {
+    previewCache.current[fileName] = dataUrl;
+  }
 
   setPreviewUrl(dataUrl);
   setLoadingPreview(null);
-}
-
-function updateCache(
-  cache: React.RefObject<Record<string, string>>,
-  accessOrder: React.RefObject<string[]>,
-  fileName: string,
-  dataUrl: string,
-): void {
-  const newAccessOrder = [
-    fileName,
-    ...accessOrder.current.filter((f) => f !== fileName),
-  ];
-
-  const newCache = { ...cache.current, [fileName]: dataUrl };
-  let finalAccessOrder = newAccessOrder;
-
-  if (finalAccessOrder.length > MAX_CACHE_ITEMS) {
-    const filesToRemove = finalAccessOrder.slice(MAX_CACHE_ITEMS);
-
-    for (const fileToRemove of filesToRemove) {
-      delete newCache[fileToRemove];
-    }
-
-    finalAccessOrder = finalAccessOrder.slice(0, MAX_CACHE_ITEMS);
-  }
-
-  cache.current = newCache;
-  accessOrder.current = finalAccessOrder;
 }
 
 export function usePreviewCache(fileName: string | null) {
@@ -172,7 +136,6 @@ export function usePreviewCache(fileName: string | null) {
       checkCachedPreview(
         ctx.path,
         ctx.previewCache,
-        ctx.cacheAccessOrder,
         fileName,
         setPreviewUrl,
         setLoadingPreview,
@@ -187,7 +150,6 @@ export function usePreviewCache(fileName: string | null) {
       await fetchPreview(
         ctx.path,
         ctx.previewCache,
-        ctx.cacheAccessOrder,
         fileName,
         setPreviewUrl,
         setPreviewError,
@@ -198,7 +160,7 @@ export function usePreviewCache(fileName: string | null) {
     return () => {
       cancelled = true;
     };
-  }, [ctx.path, ctx.previewCache, ctx.cacheAccessOrder, fileName]);
+  }, [ctx.path, fileName]);
 
   return {
     loadingPreview,

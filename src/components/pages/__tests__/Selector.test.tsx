@@ -1,15 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import Selector from "../Selector";
 
+jest.mock("@/hooks/usePreviewCache", () => ({
+  usePreviewCache: jest.fn(() => ({
+    previewUrl: null,
+    loading: false,
+    error: null,
+  })),
+}));
+
 describe("Selector", () => {
   it("renders total pages and selected file", () => {
     render(
       <Selector
         imageFiles={["a.png", "b.png"]}
-        targetPageNumber={"1"}
-        onPageNumberChange={() => {}}
-        useFileName={false}
-        onUseFileNameChange={() => {}}
+        selectedIndex={0}
+        onPageIndexChange={() => {}}
         targetFile={"a.png"}
       />,
     );
@@ -21,10 +27,8 @@ describe("Selector", () => {
     render(
       <Selector
         imageFiles={["a.png", "b.png"]}
-        targetPageNumber={"1"}
-        onPageNumberChange={() => {}}
-        useFileName={false}
-        onUseFileNameChange={() => {}}
+        selectedIndex={0}
+        onPageIndexChange={() => {}}
         targetFile={null}
       />,
     );
