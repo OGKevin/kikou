@@ -253,4 +253,110 @@ describe("PagesTab", () => {
     const images = screen.getAllByAltText(/Page/i);
     expect(images.length).toBeGreaterThan(0);
   });
+
+  it("disables left button when on first page", () => {
+    mockUseImageFiles.mockReturnValue({
+      imageFiles: ["page1.jpg", "page2.jpg", "page3.jpg"],
+      loading: false,
+      error: null,
+    });
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      selectedPage: 0,
+      setSelectedPage: mockSetSelectedPage,
+    });
+
+    render(<PagesTab />);
+    const leftButton = screen.getByTestId("prev-page-button");
+    expect(leftButton).toBeDisabled();
+  });
+
+  it("enables left button when not on first page", () => {
+    mockUseImageFiles.mockReturnValue({
+      imageFiles: ["page1.jpg", "page2.jpg", "page3.jpg"],
+      loading: false,
+      error: null,
+    });
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      selectedPage: 1,
+      setSelectedPage: mockSetSelectedPage,
+    });
+
+    render(<PagesTab />);
+    const leftButton = screen.getByTestId("prev-page-button");
+    expect(leftButton).not.toBeDisabled();
+  });
+
+  it("disables right button when on last page", () => {
+    mockUseImageFiles.mockReturnValue({
+      imageFiles: ["page1.jpg", "page2.jpg", "page3.jpg"],
+      loading: false,
+      error: null,
+    });
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      selectedPage: 2,
+      setSelectedPage: mockSetSelectedPage,
+    });
+
+    render(<PagesTab />);
+    const rightButton = screen.getByTestId("next-page-button");
+    expect(rightButton).toBeDisabled();
+  });
+
+  it("enables right button when not on last page", () => {
+    mockUseImageFiles.mockReturnValue({
+      imageFiles: ["page1.jpg", "page2.jpg", "page3.jpg"],
+      loading: false,
+      error: null,
+    });
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      selectedPage: 1,
+      setSelectedPage: mockSetSelectedPage,
+    });
+
+    render(<PagesTab />);
+    const rightButton = screen.getByTestId("next-page-button");
+    expect(rightButton).not.toBeDisabled();
+  });
+
+  it("calls updateSelectedPage when left button is clicked", () => {
+    mockUseImageFiles.mockReturnValue({
+      imageFiles: ["page1.jpg", "page2.jpg", "page3.jpg"],
+      loading: false,
+      error: null,
+    });
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      selectedPage: 1,
+      setSelectedPage: mockSetSelectedPage,
+    });
+
+    render(<PagesTab />);
+    const leftButton = screen.getByTestId("prev-page-button");
+
+    fireEvent.click(leftButton);
+    expect(mockSetSelectedPage).toHaveBeenCalledWith(0);
+  });
+
+  it("calls updateSelectedPage when right button is clicked", () => {
+    mockUseImageFiles.mockReturnValue({
+      imageFiles: ["page1.jpg", "page2.jpg", "page3.jpg"],
+      loading: false,
+      error: null,
+    });
+    mockUseComicInfo.mockReturnValue({ parsedComicInfo: {} });
+    mockUseArchiveContext.mockReturnValue({
+      selectedPage: 1,
+      setSelectedPage: mockSetSelectedPage,
+    });
+
+    render(<PagesTab />);
+    const rightButton = screen.getByTestId("next-page-button");
+
+    fireEvent.click(rightButton);
+    expect(mockSetSelectedPage).toHaveBeenCalledWith(2);
+  });
 });
