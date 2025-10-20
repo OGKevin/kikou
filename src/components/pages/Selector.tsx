@@ -87,9 +87,12 @@ interface ListboxComponentProps extends HTMLAttributes<HTMLElement> {
 const ListboxComponent = forwardRef<HTMLDivElement, ListboxComponentProps>(
   function ListboxComponent(props, ref) {
     const { children, ...other } = props;
-    const itemData = React.Children.toArray(children);
+    const itemData = useMemo(
+      () => React.Children.toArray(children),
+      [children],
+    );
     const itemCount = itemData.length;
-    const rowProps = React.useMemo(() => EMPTY_ROW_PROPS, []);
+    const rowProps = useMemo(() => EMPTY_ROW_PROPS, []);
 
     return (
       <div ref={ref} {...other}>
