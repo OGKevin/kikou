@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Box, Stack } from "@mui/joy";
 import PagePreviewPanel from "../pages/PreviewPanel";
 import PageSettingsPanel from "../pages/SettingsPanel";
@@ -19,16 +19,10 @@ export default function TocTab() {
     hasEditedPages,
     saveAllSettings,
   } = usePageSettingsContext();
-  const [useFileName, setUseFileName] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const initialInputPageNumber = String(selectedPage + 1);
-  const [inputPageNumber, setInputPageNumber] = useState<string>(
-    initialInputPageNumber,
-  );
 
   const selectedFile = imageFiles[selectedPage] ?? null;
-
-  const targetPageNumber = inputPageNumber;
+  const targetPageNumber = String(selectedPage + 1);
 
   const saveButton = {
     label: isSaving ? "Saving..." : "Save Settings",
@@ -44,36 +38,9 @@ export default function TocTab() {
     disabled: isSaving || !hasEditedPages,
   };
 
-  const handlePageNumberChange = (val: string) => {
-    setInputPageNumber(val);
+  const handlePageIndexChange = (index: number) => {
+    setSelectedPage(index);
   };
-
-  const handleUseFileNameChange = (checked: boolean) => {
-    setUseFileName(checked);
-  };
-
-  useEffect(() => {
-    if (inputPageNumber === "") {
-      setSelectedPage(-1);
-      return;
-    }
-
-    let idx = 0;
-
-    if (useFileName) {
-      idx = imageFiles.findIndex((f) => f.includes(inputPageNumber));
-    }
-
-    if (!useFileName) {
-      const parsed = parseInt(inputPageNumber, 10);
-
-      idx = Number.isNaN(parsed) ? -1 : parsed - 1;
-    }
-
-    if (idx < 0 || idx >= imageFiles.length) return;
-
-    setSelectedPage(idx);
-  }, [useFileName, inputPageNumber, imageFiles, setSelectedPage]);
 
   const handleUpdateSettings = (updates: Partial<ComicPageInfo>) => {
     if (selectedFile) {
@@ -119,10 +86,8 @@ export default function TocTab() {
         }}
       >
         <PageSelector
-          targetPageNumber={targetPageNumber}
-          onPageNumberChange={(val) => handlePageNumberChange(val)}
-          useFileName={useFileName}
-          onUseFileNameChange={handleUseFileNameChange}
+          selectedIndex={selectedPage}
+          onPageIndexChange={handlePageIndexChange}
           imageFiles={imageFiles}
           targetFile={selectedFile}
         />

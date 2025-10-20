@@ -15,6 +15,7 @@ pub fn run() {
             archive::save_comicinfo_xml,
             archive::delete_cbz_comicinfo_xml,
             archive::commands::watch_for_creation,
+            archive::commands::stream_file_data,
             comicinfo::commands::get_bookmarked_pages,
             comicinfo::commands::validate_comicinfo_xml,
             comicinfo::commands::format_comicinfo_xml,
