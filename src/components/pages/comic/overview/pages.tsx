@@ -1,4 +1,14 @@
-import { Box, Sheet, Slider, Typography, Stack } from "@mui/joy";
+import {
+  Box,
+  Sheet,
+  Slider,
+  Typography,
+  Stack,
+  IconButton,
+  Tooltip,
+} from "@mui/joy";
+import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useImageFiles } from "@/hooks/useImageFiles";
 import { useComicInfo } from "@/hooks/useComicInfo";
 import { ComicPageInfo } from "@/types/comic";
@@ -137,7 +147,28 @@ export default function PagesTab() {
             targetPageNumber={String(selectedPage + 1)}
           />
         </Box>
-        <Box sx={{ px: "100px" }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ px: "100px" }}
+        >
+          <Tooltip title="Previous page (← Arrow key)" placement="top">
+            <span>
+              <IconButton
+                variant="outlined"
+                size="sm"
+                onClick={() => {
+                  updateSelectedPage(Math.max(0, uiSelectedPage - 1));
+                }}
+                disabled={uiSelectedPage === 0}
+                data-testid="prev-page-button"
+              >
+                <ChevronLeftIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+
           <Slider
             min={0}
             max={imageFiles.length - 1}
@@ -158,7 +189,25 @@ export default function PagesTab() {
               }
             }}
           />
-        </Box>
+
+          <Tooltip title="Next page (→ Arrow key)" placement="top">
+            <span>
+              <IconButton
+                variant="outlined"
+                size="sm"
+                onClick={() => {
+                  updateSelectedPage(
+                    Math.min(imageFiles.length - 1, uiSelectedPage + 1),
+                  );
+                }}
+                disabled={uiSelectedPage === imageFiles.length - 1}
+                data-testid="next-page-button"
+              >
+                <ChevronRightIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
+        </Stack>
       </Stack>
 
       <Box
