@@ -67,10 +67,7 @@ pub fn stream_file_data_from_archive(
         .num_threads(5)
         .build()
         .map_err(|e| {
-            ReadArchiveError::Io(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                e.to_string(),
-            ))
+            ReadArchiveError::Io(std::io::Error::other(e.to_string()))
         })?;
 
     pool.install(|| {
