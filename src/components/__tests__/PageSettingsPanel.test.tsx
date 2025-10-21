@@ -55,11 +55,17 @@ const TestWrapper = ({
   initialCurrentSettings,
   initialOriginalSettings,
   archiveResult,
+  showMarkAsTocButton,
+  currentTocFile,
+  onMarkAsToc,
 }: {
   targetFile: string | null;
   initialCurrentSettings?: Record<string, ComicPageInfo>;
   initialOriginalSettings?: Record<string, ComicPageInfo>;
   archiveResult?: any;
+  showMarkAsTocButton?: boolean;
+  currentTocFile?: string | null;
+  onMarkAsToc?: (file: string) => void;
 }) => {
   const mockStorage = createMockStorageManager();
 
@@ -81,6 +87,7 @@ const TestWrapper = ({
     result: archiveResult || null,
     loading: false,
     error: null,
+    tocFile: currentTocFile ?? null,
   });
 
   const TestConsumer = () => {
@@ -112,6 +119,8 @@ const TestWrapper = ({
               resetPageSettings(targetFile);
             }
           }}
+          showMarkAsTocButton={showMarkAsTocButton}
+          onMarkAsToc={onMarkAsToc}
         />
       </>
     );
@@ -654,5 +663,162 @@ describe("SettingsPanel edge cases", () => {
       expect(screen.queryByText("Original Settings")).not.toBeInTheDocument();
       expect(screen.getByTestId("is-edited").textContent).toBe("false");
     });
+  });
+});
+
+describe("SettingsPanel Mark as TOC button", () => {
+  it("does not show mark as toc button when showMarkAsTocButton is false", () => {
+    const mockStorage = createMockStorageManager();
+    const targetFile = "test-page.jpg";
+    const currentSettings: ComicPageInfo = newPageInfo(
+      PageType.Story,
+      false,
+      "",
+    );
+
+    render(
+      <PageSettingsProvider
+        path="/test/path.cbz"
+        storageManager={mockStorage as any}
+      >
+        <SettingsPanel
+          targetFile={targetFile}
+          currentSettings={currentSettings}
+          onUpdateSettings={jest.fn()}
+          onReset={jest.fn()}
+          showMarkAsTocButton={false}
+        />
+      </PageSettingsProvider>,
+    );
+
+    expect(screen.queryByTestId("mark-as-toc-button")).not.toBeInTheDocument();
+  });
+
+  it("shows mark as toc button when showMarkAsTocButton is true", () => {
+    const mockStorage = createMockStorageManager();
+    const targetFile = "test-page.jpg";
+    const currentSettings: ComicPageInfo = newPageInfo(
+      PageType.Story,
+      false,
+      "",
+    );
+
+    render(
+      <PageSettingsProvider
+        path="/test/path.cbz"
+        storageManager={mockStorage as any}
+      >
+        <SettingsPanel
+          targetFile={targetFile}
+          currentSettings={currentSettings}
+          onUpdateSettings={jest.fn()}
+          onReset={jest.fn()}
+          showMarkAsTocButton={true}
+          onMarkAsToc={jest.fn()}
+        />
+      </PageSettingsProvider>,
+    );
+
+    expect(screen.getByTestId("mark-as-toc-button")).toBeInTheDocument();
+  });
+
+  it("calls onMarkAsToc when mark as toc button is clicked", async () => {
+    const user = userEvent.setup();
+    const mockOnMarkAsToc = jest.fn();
+    const mockStorage = createMockStorageManager();
+    const targetFile = "test-page.jpg";
+    const currentSettings: ComicPageInfo = newPageInfo(
+      PageType.Story,
+      false,
+      "",
+    );
+
+    render(
+      <PageSettingsProvider
+        path="/test/path.cbz"
+        storageManager={mockStorage as any}
+      >
+        <SettingsPanel
+          targetFile={targetFile}
+          currentSettings={currentSettings}
+          onUpdateSettings={jest.fn()}
+          onReset={jest.fn()}
+          showMarkAsTocButton={true}
+          onMarkAsToc={mockOnMarkAsToc}
+        />
+      </PageSettingsProvider>,
+    );
+
+    const markAsTocButton = screen.getByTestId("mark-as-toc-button");
+
+    expect(markAsTocButton).not.toBeDisabled();
+
+    await user.click(markAsTocButton);
+
+    expect(mockOnMarkAsToc).toHaveBeenCalledTimes(1);
+    expect(mockOnMarkAsToc).toHaveBeenCalledWith(targetFile);
+  });
+
+  it("disables mark as toc button when current page is already marked as toc", () => {
+    const mockStorage = createMockStorageManager();
+    const targetFile = "test-page.jpg";
+    const currentSettings: ComicPageInfo = newPageInfo(
+      PageType.Story,
+      false,
+      "",
+    );
+
+    render(
+      <TestWrapper
+        targetFile={targetFile}
+        showMarkAsTocButton={true}
+        currentTocFile={targetFile}
+        onMarkAsToc={jest.fn()}
+      />,
+    );
+
+    const markAsTocButton = screen.getByTestId("mark-as-toc-button");
+
+    expect(markAsTocButton).toBeDisabled();
+  });
+
+  it("enables mark as toc button when current page is not marked as toc", () => {
+    const targetFile = "test-page.jpg";
+    const otherFile = "other-page.jpg";
+
+    render(
+      <TestWrapper
+        targetFile={targetFile}
+        showMarkAsTocButton={true}
+        currentTocFile={otherFile}
+        onMarkAsToc={jest.fn()}
+      />,
+    );
+
+    const markAsTocButton = screen.getByTestId("mark-as-toc-button");
+
+    expect(markAsTocButton).not.toBeDisabled();
+  });
+
+  it("disables mark as toc button when no file is selected", () => {
+    const mockStorage = createMockStorageManager();
+
+    render(
+      <PageSettingsProvider
+        path="/test/path.cbz"
+        storageManager={mockStorage as any}
+      >
+        <SettingsPanel
+          targetFile={null}
+          currentSettings={createBlankPageInfo()}
+          onUpdateSettings={jest.fn()}
+          onReset={jest.fn()}
+          showMarkAsTocButton={true}
+          onMarkAsToc={jest.fn()}
+        />
+      </PageSettingsProvider>,
+    );
+
+    expect(screen.queryByTestId("mark-as-toc-button")).not.toBeInTheDocument();
   });
 });

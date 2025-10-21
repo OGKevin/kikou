@@ -16,6 +16,7 @@ import {
 import { devLog } from "@/utils/devLog";
 import { PageType, ComicPageInfo, createBlankPageInfo } from "@/types/comic";
 import { usePageSettingsContext } from "@/contexts/PageSettingsContext";
+import { useArchiveContext } from "@/contexts/ArchiveContext";
 
 interface PageSettingsPanelProps {
   targetFile: string | null;
@@ -26,6 +27,8 @@ interface PageSettingsPanelProps {
   onSave?: () => void;
   isSaving?: boolean;
   errorMessage?: string | null;
+  showMarkAsTocButton?: boolean;
+  onMarkAsToc?: (file: string) => void;
 }
 
 export default function PageSettingsPanel({
@@ -37,8 +40,11 @@ export default function PageSettingsPanel({
   onSave,
   isSaving = false,
   errorMessage,
+  showMarkAsTocButton = false,
+  onMarkAsToc,
 }: PageSettingsPanelProps) {
   const { originalSettings, isPageEdited } = usePageSettingsContext();
+  const { tocFile } = useArchiveContext() ?? { tocFile: null };
 
   const [localBookmark, setLocalBookmark] = useState(currentSettings.Bookmark);
   const bookmarkTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -182,15 +188,34 @@ export default function PageSettingsPanel({
                 />
               </FormControl>
 
-              <Stack spacing={1.5}>
+              <Stack
+                spacing={1.5}
+                direction="row"
+                sx={{ justifyContent: "center" }}
+              >
                 <Button
                   onClick={onReset}
                   variant="soft"
                   color="danger"
                   size="sm"
+                  sx={{ flex: 1 }}
+                  data-testid="reset-button"
                 >
                   Reset
                 </Button>
+                {showMarkAsTocButton && targetFile && (
+                  <Button
+                    onClick={() => onMarkAsToc?.(targetFile)}
+                    disabled={tocFile === targetFile}
+                    variant="soft"
+                    color="neutral"
+                    size="sm"
+                    sx={{ flex: 1 }}
+                    data-testid="mark-as-toc-button"
+                  >
+                    Mark as ToC
+                  </Button>
+                )}
                 {showSaveButton && (
                   <Button
                     onClick={onSave}
@@ -198,6 +223,8 @@ export default function PageSettingsPanel({
                     variant="solid"
                     color="success"
                     size="sm"
+                    sx={{ flex: 1 }}
+                    data-testid="save-button"
                   >
                     {isSaving ? "Saving..." : "Save to Archive"}
                   </Button>
