@@ -24,7 +24,7 @@
 
           src = ./.;
 
-          cargoHash = "sha256-BOgb88XuxcjOnp8cykXsSVM22tnnnIFdjP1WzRuuSns=";
+          cargoHash = "sha256-cOhWW/aKr7OQiryk6uyMgRWCXBNwkiLveIqVoDqjlt0=";
 
           pnpmDeps = pkgs.pnpm.fetchDeps {
             inherit (finalAttrs) pname version src;

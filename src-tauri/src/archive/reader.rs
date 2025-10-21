@@ -54,8 +54,8 @@ pub fn get_file_data(path: &str, file_name: &str) -> Result<Vec<u8>, ReadArchive
 pub fn stream_file_data_from_archive(
     path: &str,
     file_names: Vec<String>,
-    on_data: impl Fn(String, Vec<u8>) + Send + Sync,
-    on_error: impl Fn(String, String) + Send + Sync,
+    on_data: impl Fn(String, Vec<u8>) + Send + Sync + 'static,
+    on_error: impl Fn(String, String) + Send + Sync + 'static,
 ) -> Result<(), ReadArchiveError> {
     // Validate archive exists first
     let _ = open_zip_archive(path)?;
@@ -65,28 +65,40 @@ pub fn stream_file_data_from_archive(
     let on_error = Arc::new(on_error);
     let path = Arc::new(path.to_string());
 
-    // Process files in parallel using rayon
-    file_names.par_iter().for_each(|file_name| {
-        // Each thread opens its own archive instance
-        match open_zip_archive(&path) {
-            Ok(mut archive) => match archive.by_name(file_name) {
-                Ok(mut zip_file) => {
-                    let mut data = Vec::new();
-                    if let Err(e) = zip_file.read_to_end(&mut data) {
-                        on_error(file_name.clone(), e.to_string());
-                        return;
-                    }
+    // Create a custom thread pool with limited threads
+    let pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(5)
+        .build()
+        .map_err(|e| {
+            ReadArchiveError::Io(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                e.to_string(),
+            ))
+        })?;
 
-                    on_data(file_name.clone(), data);
-                }
+    pool.install(|| {
+        file_names.par_iter().for_each(|file_name| {
+            // Each thread opens its own archive instance
+            match open_zip_archive(&path) {
+                Ok(mut archive) => match archive.by_name(file_name) {
+                    Ok(mut zip_file) => {
+                        let mut data = Vec::new();
+                        if let Err(e) = zip_file.read_to_end(&mut data) {
+                            on_error(file_name.clone(), e.to_string());
+                            return;
+                        }
+
+                        on_data(file_name.clone(), data);
+                    }
+                    Err(e) => {
+                        on_error(file_name.clone(), e.to_string());
+                    }
+                },
                 Err(e) => {
                     on_error(file_name.clone(), e.to_string());
                 }
-            },
-            Err(e) => {
-                on_error(file_name.clone(), e.to_string());
             }
-        }
+        });
     });
 
     Ok(())
