@@ -6,12 +6,6 @@ interface ResizablePagePreviewPanelProps {
   targetFile: string | null;
   targetPageNumber: string;
   title?: string;
-  buttons?: Array<{
-    label: string;
-    onClick: () => void;
-    disabled?: boolean;
-    style?: React.CSSProperties;
-  }>;
   defaultSize?: number;
   minSize?: number;
   maxSize?: number;
@@ -23,7 +17,6 @@ export default function ResizablePagePreviewPanel({
   targetFile,
   targetPageNumber,
   title,
-  buttons,
   defaultSize = 33,
   minSize = 20,
   maxSize = 80,
@@ -42,7 +35,6 @@ export default function ResizablePagePreviewPanel({
         targetFile={targetFile}
         targetPageNumber={targetPageNumber}
         title={title}
-        buttons={buttons}
       />
     </Panel>
   );

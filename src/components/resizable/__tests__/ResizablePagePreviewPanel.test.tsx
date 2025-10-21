@@ -72,27 +72,6 @@ describe("ResizablePagePreviewPanel", () => {
     expect(screen.getByText("Title: Test Title")).toBeInTheDocument();
   });
 
-  it("passes buttons to wrapped component", () => {
-    const mockOnClick = jest.fn();
-    const buttons = [
-      {
-        label: "Test Button",
-        onClick: mockOnClick,
-        disabled: false,
-      },
-    ];
-
-    render(
-      <ResizablePagePreviewPanel
-        targetFile="page-001.jpg"
-        targetPageNumber="1"
-        buttons={buttons}
-      />,
-    );
-
-    expect(screen.getByText("Test Button")).toBeInTheDocument();
-  });
-
   it("uses default size values for Panel", () => {
     render(
       <ResizablePagePreviewPanel
