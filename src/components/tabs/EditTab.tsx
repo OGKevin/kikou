@@ -26,7 +26,7 @@ export default function EditTab({ storageManager }: EditTabProps) {
     saveAllSettings,
   } = usePageSettingsContext();
   const [localError, setLocalError] = useState<string | null>(null);
-  const { selectedPage } = useArchiveContext()!;
+  const { selectedPage, setTocFile } = useArchiveContext()!;
   const selectedFile = imageFiles[selectedPage] ?? null;
 
   const saveButton = {
@@ -41,6 +41,10 @@ export default function EditTab({ storageManager }: EditTabProps) {
       }
     },
     disabled: isSaving || !hasEditedPages,
+  };
+
+  const handleMarkAsToc = (file: string) => {
+    setTocFile(file);
   };
 
   return (
@@ -111,6 +115,8 @@ export default function EditTab({ storageManager }: EditTabProps) {
               }
             }}
             errorMessage={localError}
+            showMarkAsTocButton={true}
+            onMarkAsToc={handleMarkAsToc}
           />
           <PagePreviewPanel
             targetFile={selectedFile}
