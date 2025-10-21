@@ -53,6 +53,22 @@ const createMockStorageManager = (): Partial<LocalStorageManager> => {
   };
 };
 
+const createMockArchiveContext = (overrides?: any) => ({
+  result: { image_files: [], comic_info: null },
+  loading: false,
+  error: null,
+  reload: jest.fn(),
+  reloadComicInfo: jest.fn().mockResolvedValue(undefined),
+  previewCache: { current: {} },
+  tocFile: null,
+  setTocFile: jest.fn(),
+  hasUnsavedXmlChanges: false,
+  setHasUnsavedXmlChanges: jest.fn(),
+  selectedPage: 0,
+  setSelectedPage: jest.fn(),
+  ...overrides,
+});
+
 // A small consumer component to access the context method under test
 const Consumer = () => {
   const ctx = usePageSettingsContext();
@@ -84,6 +100,7 @@ describe("PageSettingsContext", () => {
       parsedComicInfo: {},
       loading: false,
       error: null,
+      reloadComicInfo: jest.fn(),
     });
   });
 
@@ -163,7 +180,6 @@ describe("PageSettingsContext", () => {
       });
     });
   });
-
   describe("hasEditedPages", () => {
     it("should be true when any page is edited", async () => {
       const mockStorage = createMockStorageManager();
@@ -196,11 +212,11 @@ describe("PageSettingsContext", () => {
       };
 
       // Mock ArchiveContext
-      mockUseArchiveContext.mockReturnValue({
-        result: { image_files: ["page1.jpg"], comic_info: null },
-        loading: false,
-        error: null,
-      });
+      mockUseArchiveContext.mockReturnValue(
+        createMockArchiveContext({
+          result: { image_files: ["page1.jpg"], comic_info: null },
+        }),
+      );
 
       render(
         <ArchiveProvider path="/test/path.cbz">
@@ -235,22 +251,23 @@ describe("PageSettingsContext", () => {
         parsedComicInfo: settings,
         loading: false,
         error: null,
+        reloadComicInfo: jest.fn(),
       });
 
       // Mock ArchiveContext to return comic_info that matches the settings
-      mockUseArchiveContext.mockReturnValue({
-        result: {
-          image_files: ["page1.jpg", "page2.jpg"],
-          comic_info: {
-            Pages: [
-              { Image: 0, Type: "Story", DoublePage: false, Bookmark: "" },
-              { Image: 1, Type: "Unknown", DoublePage: false, Bookmark: "" },
-            ],
+      mockUseArchiveContext.mockReturnValue(
+        createMockArchiveContext({
+          result: {
+            image_files: ["page1.jpg", "page2.jpg"],
+            comic_info: {
+              Pages: [
+                { Image: 0, Type: "Story", DoublePage: false, Bookmark: "" },
+                { Image: 1, Type: "Unknown", DoublePage: false, Bookmark: "" },
+              ],
+            },
           },
-        },
-        loading: false,
-        error: null,
-      });
+        }),
+      );
 
       const TestComponent = () => {
         const { hasEditedPages } = usePageSettingsContext();
@@ -295,22 +312,23 @@ describe("PageSettingsContext", () => {
         parsedComicInfo: settings,
         loading: false,
         error: null,
+        reloadComicInfo: jest.fn(),
       });
 
       // Mock ArchiveContext to return comic_info that matches the settings
-      mockUseArchiveContext.mockReturnValue({
-        result: {
-          image_files: ["page1.jpg", "page2.jpg"],
-          comic_info: {
-            Pages: [
-              { Image: 0, Type: "Story", DoublePage: false, Bookmark: "" },
-              { Image: 1, Type: "Unknown", DoublePage: false, Bookmark: "" },
-            ],
+      mockUseArchiveContext.mockReturnValue(
+        createMockArchiveContext({
+          result: {
+            image_files: ["page1.jpg", "page2.jpg"],
+            comic_info: {
+              Pages: [
+                { Image: 0, Type: "Story", DoublePage: false, Bookmark: "" },
+                { Image: 1, Type: "Unknown", DoublePage: false, Bookmark: "" },
+              ],
+            },
           },
-        },
-        loading: false,
-        error: null,
-      });
+        }),
+      );
 
       const TestComponent = () => {
         const { saveAllSettings } = usePageSettingsContext();
@@ -513,7 +531,10 @@ describe("PageSettingsContext", () => {
         parsedComicInfo: {},
         loading: false,
         error: null,
+        reloadComicInfo: jest.fn(),
       });
+      // Ensure useArchiveContext is mocked
+      mockUseArchiveContext.mockReturnValue(createMockArchiveContext());
     });
 
     it("should translate currentSettings to backend type and pass Type: 'Story'", async () => {
@@ -582,6 +603,312 @@ describe("PageSettingsContext", () => {
           }),
         }),
       );
+    });
+  });
+
+  describe("Page Deletion Scenario (Clearing Settings)", () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+      mockUseComicInfo.mockReturnValue({
+        parsedComicInfo: {},
+        loading: false,
+        error: null,
+        reloadComicInfo: jest.fn(),
+      });
+    });
+
+    it("should not send empty pages to backend when user clears page settings", async () => {
+      const mockStorage = createMockStorageManager();
+
+      // Original settings: page1 has Story type and bookmark
+      const originalSettings: Record<string, ComicPageInfo> = {
+        "page1.jpg": newPageInfo(PageType.Story, false, "Chapter 1"),
+        "page2.jpg": newPageInfo(PageType.FrontCover, false, ""),
+      };
+
+      // Current settings: page1 has been cleared to empty, page2 remains unchanged
+      const currentSettings: Record<string, ComicPageInfo> = {
+        "page1.jpg": createBlankPageInfo(), // Empty - IsEmpty() returns true
+        "page2.jpg": newPageInfo(PageType.FrontCover, false, ""),
+      };
+
+      mockUseComicInfo.mockReturnValue({
+        parsedComicInfo: originalSettings,
+        loading: false,
+        error: null,
+        reloadComicInfo: jest.fn(),
+      });
+
+      (mockStorage.getCurrentPageSettings as jest.Mock).mockReturnValue(
+        currentSettings,
+      );
+
+      mockedInvoke.mockResolvedValue(undefined);
+
+      const TestComponent = () => {
+        const { currentSettings, updatePageSettings, saveAllSettings } =
+          usePageSettingsContext();
+        const [saveCompleted, setSaveCompleted] = useState(false);
+
+        return (
+          <div>
+            <button
+              onClick={() => {
+                // User clears page1 settings
+                updatePageSettings("page1.jpg", createBlankPageInfo());
+              }}
+              data-testid="clear-page1-btn"
+            >
+              Clear Page 1
+            </button>
+            <button
+              onClick={async () => {
+                await saveAllSettings();
+                setSaveCompleted(true);
+              }}
+              data-testid="save-btn"
+            >
+              Save
+            </button>
+            <div data-testid="page1-empty">
+              {currentSettings["page1.jpg"]?.IsEmpty().toString()}
+            </div>
+            <div data-testid="save-completed">{saveCompleted.toString()}</div>
+          </div>
+        );
+      };
+
+      render(
+        <PageSettingsProvider
+          path="/test/path.cbz"
+          storageManager={mockStorage as any}
+        >
+          <TestComponent />
+        </PageSettingsProvider>,
+      );
+
+      const user = userEvent.setup();
+
+      // Verify initial state
+      await waitFor(() => {
+        expect(screen.getByTestId("page1-empty")).toHaveTextContent("true");
+      });
+
+      // Save the cleared settings
+      await user.click(screen.getByTestId("save-btn"));
+
+      // Backend should be called with only page2, page1 should NOT be in the settings
+      expect(mockedInvoke).toHaveBeenCalledWith(
+        "save_page_settings",
+        expect.objectContaining({
+          path: "/test/path.cbz",
+          pageSettings: {
+            "page2.jpg": expect.objectContaining({
+              Type: PageType.FrontCover,
+              Image: 1,
+            }),
+          },
+        }),
+      );
+
+      // Ensure page1 is NOT in the sent settings
+      const callArgs = mockedInvoke.mock.calls[0][1] as Record<
+        string,
+        Record<string, any>
+      >;
+      expect(callArgs.pageSettings).not.toHaveProperty("page1.jpg");
+
+      await waitFor(() => {
+        expect(screen.getByTestId("save-completed")).toHaveTextContent("true");
+      });
+    });
+
+    it("should detect when page goes from edited non-empty to empty", async () => {
+      const mockStorage = createMockStorageManager();
+
+      const originalSettings: Record<string, ComicPageInfo> = {
+        "page1.jpg": newPageInfo(PageType.Story, false, "Original"),
+      };
+
+      const currentSettings: Record<string, ComicPageInfo> = {
+        "page1.jpg": createBlankPageInfo(),
+      };
+
+      mockUseComicInfo.mockReturnValue({
+        parsedComicInfo: originalSettings,
+        loading: false,
+        error: null,
+      });
+
+      (mockStorage.getCurrentPageSettings as jest.Mock).mockReturnValue(
+        currentSettings,
+      );
+
+      const TestComponent = () => {
+        const { isPageEdited } = usePageSettingsContext();
+
+        return (
+          <div>
+            <div data-testid="is-edited">
+              {isPageEdited("page1.jpg").toString()}
+            </div>
+          </div>
+        );
+      };
+
+      render(
+        <PageSettingsProvider
+          path="/test/path.cbz"
+          storageManager={mockStorage as any}
+        >
+          <TestComponent />
+        </PageSettingsProvider>,
+      );
+
+      // Page should be marked as edited because it was originally non-empty but now is empty
+      await waitFor(() => {
+        expect(screen.getByTestId("is-edited")).toHaveTextContent("true");
+      });
+    });
+
+    it("should filter out empty pages before sending to backend", async () => {
+      const mockStorage = createMockStorageManager();
+
+      const settings: Record<string, ComicPageInfo> = {
+        "page1.jpg": createBlankPageInfo(),
+        "page2.jpg": createBlankPageInfo(),
+        "page3.jpg": newPageInfo(PageType.Story, false, "Keep this"),
+      };
+
+      (mockStorage.getCurrentPageSettings as jest.Mock).mockReturnValue(
+        settings,
+      );
+
+      mockedInvoke.mockResolvedValue(undefined);
+
+      const TestComponent = () => {
+        const { saveAllSettings } = usePageSettingsContext();
+
+        return (
+          <button onClick={() => saveAllSettings()} data-testid="save-btn">
+            Save
+          </button>
+        );
+      };
+
+      render(
+        <PageSettingsProvider
+          path="/test/path.cbz"
+          storageManager={mockStorage as any}
+        >
+          <TestComponent />
+        </PageSettingsProvider>,
+      );
+
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("save-btn"));
+
+      // Only page3 should be sent to backend
+      const callArgs = mockedInvoke.mock.calls[0][1] as Record<
+        string,
+        Record<string, any>
+      >;
+      expect(Object.keys(callArgs.pageSettings)).toEqual(["page3.jpg"]);
+      expect(callArgs.pageSettings["page3.jpg"]).toEqual(
+        expect.objectContaining({
+          Type: PageType.Story,
+          Bookmark: "Keep this",
+        }),
+      );
+    });
+
+    it("should mark hasEditedPages as true when a page is cleared", async () => {
+      const mockStorage = createMockStorageManager();
+
+      const originalSettings: Record<string, ComicPageInfo> = {
+        "page1.jpg": newPageInfo(PageType.Story, false, "bookmark"),
+        "page2.jpg": createBlankPageInfo(),
+      };
+
+      const editedSettings: Record<string, ComicPageInfo> = {
+        "page1.jpg": createBlankPageInfo(), // Cleared
+        "page2.jpg": createBlankPageInfo(),
+      };
+
+      mockUseComicInfo.mockReturnValue({
+        parsedComicInfo: originalSettings,
+        loading: false,
+        error: null,
+      });
+
+      (mockStorage.getCurrentPageSettings as jest.Mock).mockReturnValue(
+        editedSettings,
+      );
+
+      const TestComponent = () => {
+        const { hasEditedPages } = usePageSettingsContext();
+
+        return <div data-testid="has-edited">{hasEditedPages.toString()}</div>;
+      };
+
+      render(
+        <PageSettingsProvider
+          path="/test/path.cbz"
+          storageManager={mockStorage as any}
+        >
+          <TestComponent />
+        </PageSettingsProvider>,
+      );
+
+      // Should have edited pages because page1 was cleared
+      await waitFor(() => {
+        expect(screen.getByTestId("has-edited")).toHaveTextContent("true");
+      });
+    });
+
+    it("should treat bookmark with only whitespace as empty", async () => {
+      const mockStorage = createMockStorageManager();
+
+      const settings: Record<string, ComicPageInfo> = {
+        "page1.jpg": newPageInfo(PageType.Unknown, false, "   "), // Whitespace only
+        "page2.jpg": newPageInfo(PageType.Story, false, "keep"),
+      };
+
+      (mockStorage.getCurrentPageSettings as jest.Mock).mockReturnValue(
+        settings,
+      );
+
+      mockedInvoke.mockResolvedValue(undefined);
+
+      const TestComponent = () => {
+        const { saveAllSettings } = usePageSettingsContext();
+
+        return (
+          <button onClick={() => saveAllSettings()} data-testid="save-btn">
+            Save
+          </button>
+        );
+      };
+
+      render(
+        <PageSettingsProvider
+          path="/test/path.cbz"
+          storageManager={mockStorage as any}
+        >
+          <TestComponent />
+        </PageSettingsProvider>,
+      );
+
+      const user = userEvent.setup();
+      await user.click(screen.getByTestId("save-btn"));
+
+      // Only page2 should be sent (page1 has whitespace-only bookmark, should be filtered)
+      const callArgs = mockedInvoke.mock.calls[0][1] as Record<
+        string,
+        Record<string, any>
+      >;
+      expect(Object.keys(callArgs.pageSettings)).toEqual(["page2.jpg"]);
+      expect(callArgs.pageSettings).not.toHaveProperty("page1.jpg");
     });
   });
 });

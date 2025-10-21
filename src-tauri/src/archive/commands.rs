@@ -92,30 +92,31 @@ pub fn get_cbz_file_data(
 }
 
 #[tauri::command]
-pub fn get_comicinfo(path: String) -> Result<Option<String>, String> {
+pub fn get_comicinfo(path: String) -> Result<Option<crate::comicinfo::ComicInfo>, String> {
     let archive = read_archive(&path).map_err(|e| e.to_string())?;
-
-    if let Some(comic_info) = &archive.comic_info {
-        match comic_info.to_xml() {
-            Ok(xml) => Ok(Some(xml)),
-            Err(e) => {
-                debug!("Failed to serialize ComicInfo to XML: {}", e);
-                Err(format!("Failed to serialize ComicInfo: {}", e))
-            }
-        }
-    } else {
-        Ok(None)
-    }
+    Ok(archive.comic_info)
 }
 
 #[tauri::command]
 pub async fn save_page_settings(
     path: String,
     page_settings: HashMap<String, super::writer::PageSettings>,
-) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || save_page_settings_impl(path, page_settings))
-        .await
-        .map_err(|e| e.to_string())?
+) -> Result<Vec<crate::comicinfo::ComicPageInfo>, String> {
+    let path_clone = path.clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        save_page_settings_impl(path_clone, page_settings)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let archive = super::reader::read_archive(&path).map_err(|e| e.to_string())?;
+    let pages = archive
+        .comic_info
+        .and_then(|ci| ci.pages)
+        .map(|pages| pages.page)
+        .unwrap_or_default();
+
+    Ok(pages)
 }
 
 #[tauri::command]

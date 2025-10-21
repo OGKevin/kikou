@@ -9,6 +9,7 @@ import React, {
   ReactNode,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { savePageSettings } from "@/api/savePageSettings";
 import { ComicPageInfo, createBlankPageInfo } from "../types/comic";
 import { LocalStorageManager } from "../utils/localStorage";
 import { devLog } from "../utils/devLog";
@@ -226,6 +227,8 @@ export function PageSettingsProvider({
     [currentSettings, isPageEdited],
   );
 
+  const { reloadComicInfo } = useComicInfo();
+
   const saveAllSettings = useCallback(async (): Promise<string[]> => {
     if (!path) {
       throw new Error("No archive path available");
@@ -246,7 +249,17 @@ export function PageSettingsProvider({
           const pageSettings = currentSettings[fileName];
           const index = allFiles.indexOf(fileName);
 
-          if (pageSettings.IsEmpty()) return;
+          if (pageSettings.IsEmpty()) {
+            devLog(`Filtering out empty page: ${fileName}`, pageSettings);
+            return;
+          }
+
+          if (pageSettings.Type === "Unknown") {
+            devLog(
+              `WARNING: Attempting to save page with Unknown type: ${fileName}`,
+              pageSettings,
+            );
+          }
 
           backendSettings[fileName] = {
             Type: pageSettings.Type,
@@ -258,19 +271,14 @@ export function PageSettingsProvider({
 
         devLog("Saving edited pages to backend:", backendSettings);
 
-        await invoke("save_page_settings", {
-          path,
-          pageSettings: backendSettings,
-        });
+        await savePageSettings(path, backendSettings);
+        // No need to setOriginalSettings here; reloadComicInfo will update originalSettings via useComicInfo
+        // Reload comic info from backend so useComicInfo gets the latest state
+        if (typeof reloadComicInfo !== "function") {
+          throw new Error("reloadComicInfo is null");
+        }
 
-        setOriginalSettings((prev) => {
-          const updated = { ...prev };
-
-          allFiles.forEach((fileName) => {
-            updated[fileName] = { ...currentSettings[fileName] };
-          });
-          return updated;
-        });
+        await reloadComicInfo();
       } else {
         devLog("No edited pages to save");
       }

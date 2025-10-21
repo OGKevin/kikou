@@ -86,7 +86,7 @@ function isPageInfoEmpty(pageInfo: ComicPageInfo): boolean {
   return (
     pageInfo.Type === PageType.Unknown &&
     !pageInfo.DoublePage &&
-    !pageInfo.Bookmark
+    (!pageInfo.Bookmark || pageInfo.Bookmark.trim() === "")
   );
 }
 

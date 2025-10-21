@@ -326,8 +326,20 @@ mod tests {
             zip.finish().expect("finish zip");
         }
 
-        // Prepare update for 3 of the images: image1.jpg, image2.jpg and image4.jpg
+        // Prepare update for all 5 images (full replacement approach)
+        // With the new architecture, frontend sends all pages it wants to keep
         let mut settings: HashMap<String, PageSettings> = HashMap::new();
+
+        // Update pages 1, 2, and 4 with new values
+        settings.insert(
+            "image0.jpg".to_string(),
+            PageSettings {
+                page_type: ComicPageType::Story,
+                double_page: false,
+                bookmark: "orig-0".to_string(),
+                image: 0,
+            },
+        );
 
         settings.insert(
             "image1.jpg".to_string(),
@@ -346,6 +358,16 @@ mod tests {
                 double_page: false,
                 bookmark: "updated-2".to_string(),
                 image: 2,
+            },
+        );
+
+        settings.insert(
+            "image3.jpg".to_string(),
+            PageSettings {
+                page_type: ComicPageType::Story,
+                double_page: false,
+                bookmark: "orig-3".to_string(),
+                image: 3,
             },
         );
 

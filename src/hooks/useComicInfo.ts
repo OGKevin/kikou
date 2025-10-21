@@ -136,13 +136,14 @@ export function useComicInfo() {
     // default
     setParsedComicInfo({});
     setLoading(false);
-  }, [
-    // archive?.result?.comic_info,
-    // archive?.result?.image_files,
-    // archive?.loading,
-    // archive?.error,
-    archive,
-  ]);
+  }, [archive?.result?.comic_info, archive?.result?.image_files]);
 
-  return { parsedComicInfo, loading, error };
+  // Expose a function to reload comic info using ArchiveContext
+  const reloadComicInfo = async () => {
+    if (archive?.reloadComicInfo) {
+      await archive.reloadComicInfo();
+    }
+  };
+
+  return { parsedComicInfo, loading, error, reloadComicInfo };
 }
