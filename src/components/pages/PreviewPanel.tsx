@@ -9,7 +9,7 @@ import {
 } from "@mui/joy";
 import { usePreviewCache } from "@/hooks/usePreviewCache";
 import { ErrorResponse } from "@/types/errorResponse";
-import ComicHeader from "@/components/pages/Header";
+import PanelTitle from "@/components/pages/PanelTitle";
 import { useImageZoom } from "@/hooks/useImageZoom";
 
 interface PagePreviewPanelProps {
@@ -30,7 +30,6 @@ export default function PagePreviewPanel({
   targetFile,
   targetPageNumber,
   title,
-  buttons,
   width,
 }: PagePreviewPanelProps) {
   const { previewUrl, loadingPreview, error } = usePreviewCache(targetFile);
@@ -68,9 +67,7 @@ export default function PagePreviewPanel({
         overflow: "hidden",
       }}
     >
-      {title && (
-        <ComicHeader title={title} buttons={buttons ?? []} titleLevel="h2" />
-      )}
+      {title && <PanelTitle>{title}</PanelTitle>}
 
       {isLoading ? (
         <Box
