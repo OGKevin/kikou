@@ -57,15 +57,12 @@ pub fn stream_file_data_from_archive(
     on_data: impl Fn(String, Vec<u8>) + Send + Sync + 'static,
     on_error: impl Fn(String, String) + Send + Sync + 'static,
 ) -> Result<(), ReadArchiveError> {
-    // Validate archive exists first
     let _ = open_zip_archive(path)?;
 
-    // Wrap callbacks in Arc for thread-safe sharing
     let on_data = Arc::new(on_data);
     let on_error = Arc::new(on_error);
     let path = Arc::new(path.to_string());
 
-    // Create a custom thread pool with limited threads
     let pool = rayon::ThreadPoolBuilder::new()
         .num_threads(5)
         .build()
@@ -78,7 +75,6 @@ pub fn stream_file_data_from_archive(
 
     pool.install(|| {
         file_names.par_iter().for_each(|file_name| {
-            // Each thread opens its own archive instance
             match open_zip_archive(&path) {
                 Ok(mut archive) => match archive.by_name(file_name) {
                     Ok(mut zip_file) => {
