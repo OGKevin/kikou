@@ -17,12 +17,6 @@ interface PagePreviewPanelProps {
   targetPageNumber: string;
   // Optional header and layout for ToC-like usage
   title?: string;
-  buttons?: Array<{
-    label: string;
-    onClick: () => void;
-    disabled?: boolean;
-    style?: React.CSSProperties;
-  }>;
   width?: number | string;
 }
 
