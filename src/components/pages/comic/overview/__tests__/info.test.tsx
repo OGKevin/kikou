@@ -53,7 +53,7 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
+    expect(screen.getByTestId("info-loading")).toBeInTheDocument();
   });
 
   it("shows error state", () => {
@@ -68,7 +68,7 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getByText(/Error: Test error/i)).toBeInTheDocument();
+    expect(screen.getByTestId("info-error")).toBeInTheDocument();
   });
 
   it("shows no images found message", () => {
@@ -83,7 +83,7 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getByText(/No images found/i)).toBeInTheDocument();
+    expect(screen.getByTestId("info-no-images")).toBeInTheDocument();
   });
 
   it("renders comic info with title", () => {
@@ -104,9 +104,9 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getAllByText("Test Comic").length).toBeGreaterThan(0);
-    expect(screen.getByText("Test Series")).toBeInTheDocument();
-    expect(screen.getByText(/Issue #1/i)).toBeInTheDocument();
+    expect(screen.getByTestId("comic-title")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-series")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-number")).toBeInTheDocument();
   });
 
   it("renders Unknown Title when no title provided", () => {
@@ -121,7 +121,9 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getByText("Unknown Title")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-title")).toHaveTextContent(
+      "Unknown Title",
+    );
   });
 
   it("renders edit button and navigates on click", () => {
@@ -136,7 +138,7 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    const editButton = screen.getByRole("button", { name: /Edit/i });
+    const editButton = screen.getByTestId("info-edit-button");
     expect(editButton).toBeInTheDocument();
     expect(editButton).not.toBeDisabled();
 
@@ -158,7 +160,7 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    const editButton = screen.getByRole("button", { name: /Edit/i });
+    const editButton = screen.getByTestId("info-edit-button");
     expect(editButton).toBeDisabled();
   });
 
@@ -179,9 +181,9 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getByText("Action")).toBeInTheDocument();
-    expect(screen.getByText("Adventure")).toBeInTheDocument();
-    expect(screen.getByText("Sci-Fi")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-tag-0")).toHaveTextContent("Action");
+    expect(screen.getByTestId("comic-tag-1")).toHaveTextContent("Adventure");
+    expect(screen.getByTestId("comic-tag-2")).toHaveTextContent("Sci-Fi");
   });
 
   it("renders all comic info fields when present", () => {
@@ -212,13 +214,28 @@ describe("InfoTab", () => {
     });
 
     render(<InfoTab />);
-    expect(screen.getByText(/Count: 12/i)).toBeInTheDocument();
-    expect(screen.getByText(/Volume: 1/i)).toBeInTheDocument();
-    expect(screen.getByText(/Writer: Test Writer/i)).toBeInTheDocument();
-    expect(screen.getByText(/Penciller: Test Penciller/i)).toBeInTheDocument();
-    expect(screen.getByText(/Publisher: Test Publisher/i)).toBeInTheDocument();
-    expect(screen.getByText(/Genre: Action/i)).toBeInTheDocument();
-    expect(screen.getByText(/Date: 2024-10-12/i)).toBeInTheDocument();
-    expect(screen.getByText(/Page Count: 24/i)).toBeInTheDocument();
+    expect(screen.getByTestId("comic-title")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-series")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-number")).toBeInTheDocument();
+    expect(screen.getByTestId("comic-count")).toHaveTextContent("Count: 12");
+    expect(screen.getByTestId("comic-volume")).toHaveTextContent("Volume: 1");
+    expect(screen.getByTestId("comic-writer")).toHaveTextContent(
+      "Writer: Test Writer",
+    );
+    expect(screen.getByTestId("comic-penciller")).toHaveTextContent(
+      "Penciller: Test Penciller",
+    );
+    expect(screen.getByTestId("comic-publisher")).toHaveTextContent(
+      "Publisher: Test Publisher",
+    );
+    expect(screen.getByTestId("comic-genre")).toHaveTextContent(
+      "Genre: Action",
+    );
+    expect(screen.getByTestId("comic-date")).toHaveTextContent(
+      "Date: 2024-10-12",
+    );
+    expect(screen.getByTestId("comic-page-count")).toHaveTextContent(
+      "Page Count: 24",
+    );
   });
 });
