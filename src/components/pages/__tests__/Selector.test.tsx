@@ -10,28 +10,49 @@ jest.mock("@/hooks/usePreviewCache", () => ({
 }));
 
 describe("Selector", () => {
-  it("renders total pages and selected file", () => {
+  it("renders total pages", () => {
     render(
       <Selector
         imageFiles={["a.png", "b.png"]}
         selectedIndex={0}
         onPageIndexChange={() => {}}
-        targetFile={"a.png"}
       />,
     );
     expect(screen.getByText(/Total pages: 2/)).toBeInTheDocument();
-    expect(screen.getByText(/Selected: a.png/)).toBeInTheDocument();
   });
 
-  it("renders without selected file", () => {
+  it("renders select page label", () => {
     render(
       <Selector
         imageFiles={["a.png", "b.png"]}
         selectedIndex={0}
         onPageIndexChange={() => {}}
-        targetFile={null}
       />,
     );
+    expect(screen.getByText("Select Page:")).toBeInTheDocument();
     expect(screen.getByText(/Total pages: 2/)).toBeInTheDocument();
+  });
+
+  it("renders autocomplete input", () => {
+    render(
+      <Selector
+        imageFiles={["a.png", "b.png"]}
+        selectedIndex={0}
+        onPageIndexChange={() => {}}
+      />,
+    );
+    expect(screen.getByPlaceholderText("Choose a page...")).toBeInTheDocument();
+  });
+
+  it("accepts id prop", () => {
+    render(
+      <Selector
+        id="test-selector"
+        imageFiles={["a.png", "b.png"]}
+        selectedIndex={0}
+        onPageIndexChange={() => {}}
+      />,
+    );
+    expect(screen.getByTestId("test-selector")).toBeInTheDocument();
   });
 });

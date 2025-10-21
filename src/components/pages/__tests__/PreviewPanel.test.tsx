@@ -40,7 +40,6 @@ describe("PagePreviewPanel", () => {
         targetFile={"file.png"}
         targetPageNumber={"1"}
         title={"Test Title"}
-        buttons={[]}
       />,
     );
     expect(screen.getByText(/Loading/i)).toBeInTheDocument();
@@ -58,7 +57,6 @@ describe("PagePreviewPanel", () => {
         targetFile={"file.png"}
         targetPageNumber={"1"}
         title={"Test Title"}
-        buttons={[]}
       />,
     );
     expect(screen.getByAltText(/Page 1/i)).toBeInTheDocument();

@@ -19,7 +19,7 @@ interface PageSelectorProps {
   selectedIndex: number;
   onPageIndexChange: (index: number) => void;
   imageFiles: string[];
-  targetFile: string | null;
+  id?: string;
 }
 
 interface PageOption {
@@ -122,7 +122,7 @@ export default function VirtualizedPageSelector({
   selectedIndex,
   onPageIndexChange,
   imageFiles,
-  targetFile,
+  id,
 }: PageSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -143,18 +143,32 @@ export default function VirtualizedPageSelector({
 
   return (
     <Box
+      id={id}
+      data-testid={id}
       sx={{
-        mb: 3,
         display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
+        flexDirection: { xs: "column", sm: "row" },
+        alignItems: { xs: "flex-start", sm: "center" },
+        justifyContent: "center",
         gap: 2,
+        width: "auto",
+        flexWrap: "wrap",
       }}
     >
-      <FormControl sx={{ width: "100%", maxWidth: 500 }}>
-        <FormLabel sx={{ fontSize: "lg", fontWeight: "bold" }}>
-          Select Page:
-        </FormLabel>
+      <FormLabel
+        sx={{
+          fontSize: "lg",
+          fontWeight: "bold",
+          whiteSpace: "nowrap",
+          mb: { xs: 0.5, sm: 0 },
+        }}
+      >
+        Select Page:
+      </FormLabel>
+
+      <FormControl
+        sx={{ flex: { xs: "1 1 100%", sm: "0 1 auto" }, minWidth: 200 }}
+      >
         <Autocomplete
           placeholder="Choose a page..."
           slotProps={{
@@ -193,10 +207,14 @@ export default function VirtualizedPageSelector({
         />
       </FormControl>
 
-      <Typography level="body-sm" color="neutral">
-        {`Total pages: ${imageFiles.length}${
-          targetFile ? ` | Selected: ${targetFile}` : ""
-        }`}
+      <Typography
+        level="body-sm"
+        color="neutral"
+        sx={{
+          whiteSpace: "nowrap",
+        }}
+      >
+        {`Total pages: ${imageFiles.length}`}
       </Typography>
     </Box>
   );

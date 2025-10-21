@@ -13,6 +13,7 @@ import {
   Divider,
   Alert,
 } from "@mui/joy";
+import PanelTitle from "./PanelTitle";
 import { devLog } from "@/utils/devLog";
 import { PageType, ComicPageInfo, createBlankPageInfo } from "@/types/comic";
 import { usePageSettingsContext } from "@/contexts/PageSettingsContext";
@@ -112,22 +113,7 @@ export default function PageSettingsPanel({
         overflowY: "auto",
       }}
     >
-      <Typography
-        level="h3"
-        sx={{
-          mb: 2.5,
-          p: 2.5,
-          // mx: -2.5,
-          mt: -2.5,
-          position: "sticky",
-          top: 0,
-          zIndex: 1,
-          backgroundColor: "background.surface",
-          textAlign: "center",
-        }}
-      >
-        Page Settings
-      </Typography>
+      <PanelTitle>Page Settings</PanelTitle>
       <Box sx={{ px: 2.5, pb: 2.5 }}>
         {errorMessage && (
           <Alert color="danger" variant="soft" sx={{ mb: 2 }}>
@@ -236,9 +222,7 @@ export default function PageSettingsPanel({
               <>
                 <Divider sx={{ my: 2 }} />
 
-                <Typography level="h4" sx={{ mb: 1 }}>
-                  Original Settings
-                </Typography>
+                <PanelTitle>Original Settings</PanelTitle>
 
                 <Stack spacing={2}>
                   <FormControl size="sm">
