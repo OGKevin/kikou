@@ -63,8 +63,9 @@ pub fn stream_file_data_from_archive(
     let on_error = Arc::new(on_error);
     let path = Arc::new(path.to_string());
 
-    file_names.par_iter().for_each(|file_name| {
-        match open_zip_archive(&path) {
+    file_names
+        .par_iter()
+        .for_each(|file_name| match open_zip_archive(&path) {
             Ok(mut archive) => match archive.by_name(file_name) {
                 Ok(mut zip_file) => {
                     let mut data = Vec::new();
@@ -82,8 +83,7 @@ pub fn stream_file_data_from_archive(
             Err(e) => {
                 on_error(file_name.clone(), e.to_string());
             }
-        }
-    });
+        });
 
     Ok(())
 }
@@ -111,7 +111,7 @@ mod tests {
 
             for (name, content) in files {
                 let options =
-                    FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+                    FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
                 zip.start_file(name, options).unwrap();
                 zip.write_all(content).unwrap();
             }
