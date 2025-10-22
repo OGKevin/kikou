@@ -1,0 +1,42 @@
+name: Devcontainer Build Check
+permissions:
+  contents: read
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      devcontainer-changed: ${{ steps.changed-devcontainer-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Get changed devcontainer files
+        id: changed-devcontainer-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: |
+            .devcontainer/devcontainer.json
+
+  build-devcontainer:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.devcontainer-changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+      - name: Install Docker
+        uses: docker/setup-buildx-action@v3
+      - name: Build devcontainer
+        uses: devcontainers/ci@v0.3.1900000417
+        with:
+          runCmd: "true"
+          configFile: ".devcontainer/devcontainer.json"

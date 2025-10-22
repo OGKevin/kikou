@@ -1,0 +1,44 @@
+{
+  "name": "kikou-devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/nix:1": {},
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "1.86.0",
+      "channel": "stable",
+      "components": [
+        "clippy",
+        "rustfmt",
+        "cargo",
+        "rustc",
+        "rust-analyzer",
+        "rust-src",
+        "llvm-tools-preview"
+      ]
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/pnpm:1": {
+      "version": "latest"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "rust-analyzer.cargo.useRustcWrapperForBuild": true,
+        "editor.formatOnSave": true,
+        "eslint.enable": true,
+        "prettier.enable": true
+      },
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+  "initializeCommand": "apt-get update && apt-get install -y libgtk-3-dev webkit2gtk-4.0 libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev libjavascriptcoregtk-4.1-dev",
+  "postCreateCommand": "pnpm install && cargo check --manifest-path ./src-tauri/Cargo.toml",
+  "remoteUser": "vscode"
+}
