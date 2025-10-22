@@ -11,7 +11,34 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      lintable-changed: ${{ steps.changed-lintable-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Get changed lintable files
+        id: changed-lintable-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: |
+            src/**/*.ts
+            src/**/*.tsx
+            src/**/*.js
+            src/**/*.jsx
+            src/**/*.json
+            src/**/*.css
+            src/**/*.md
+            eslint.config.mts
+            package.json
+            pnpm-lock.yaml
+            .github/workflows/lint.yml
+
   lint:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.lintable-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

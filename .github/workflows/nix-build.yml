@@ -11,7 +11,29 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      nix-changed: ${{ steps.changed-nix-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Get changed Nix files
+        id: changed-nix-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: |
+            **/*.nix
+            pnpm-lock.yaml
+            src-tauri/**/Cargo.lock
+            flake.lock
+            devenv.lock
+            .github/workflows/nix-build.yml
+
   build:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.nix-changed == 'true'
     strategy:
       fail-fast: false
       matrix:

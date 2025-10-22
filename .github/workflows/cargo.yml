@@ -11,7 +11,27 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      rust-changed: ${{ steps.changed-rust-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Get changed Rust files
+        id: changed-rust-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: |
+            src-tauri/**/*.rs
+            src-tauri/**/Cargo.toml
+            src-tauri/**/Cargo.lock
+            .github/workflows/cargo.yml
+
   check:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust-changed == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -45,6 +65,8 @@ jobs:
         run: cargo check --manifest-path=src-tauri/Cargo.toml
 
   test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust-changed == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -90,6 +112,8 @@ jobs:
           WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: --disable-features=msWebView2BrowserHitTesting
 
   build:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust-changed == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -123,6 +147,8 @@ jobs:
         run: cargo build --release --manifest-path=src-tauri/Cargo.toml
 
   clippy:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.rust-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
