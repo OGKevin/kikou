@@ -36,7 +36,7 @@
       ]
     }
   },
-  "initializeCommand": "apt-get update && apt-get install -y libgtk-3-dev webkit2gtk-4.0 libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev libjavascriptcoregtk-4.1-dev",
+  "initializeCommand": "sudo apt-get update && sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev libjavascriptcoregtk-4.1-dev",
   "postCreateCommand": "pnpm install && cargo check --manifest-path ./src-tauri/Cargo.toml",
   "remoteUser": "vscode"
 }
