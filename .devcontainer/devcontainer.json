@@ -17,10 +17,8 @@
       ]
     },
     "ghcr.io/devcontainers/features/node:1": {
-      "version": "22"
-    },
-    "ghcr.io/devcontainers/features/pnpm:1": {
-      "version": "latest"
+      "version": "22",
+      "pnpmVersion": "latest"
     }
   },
   "customizations": {
