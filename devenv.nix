@@ -86,8 +86,6 @@
     nix eval
   '';
 
-  devcontainer.enable = true;
-
   git-hooks.hooks = {
     rustfmt = {
       enable = true;
