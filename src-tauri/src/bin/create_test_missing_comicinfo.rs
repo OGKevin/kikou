@@ -49,7 +49,7 @@ fn main() -> io::Result<()> {
     let file = File::create(output_path)?;
     let mut zip = ZipWriter::new(file);
 
-    let options = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+    let options = FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
 
     // Add only image files to zip (no ComicInfo.xml)
     for image_file in &image_files {

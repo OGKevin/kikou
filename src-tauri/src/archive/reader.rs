@@ -111,7 +111,7 @@ mod tests {
 
             for (name, content) in files {
                 let options =
-                    FileOptions::default().compression_method(zip::CompressionMethod::Stored);
+                    FileOptions::<()>::default().compression_method(zip::CompressionMethod::Stored);
                 zip.start_file(name, options).unwrap();
                 zip.write_all(content).unwrap();
             }
