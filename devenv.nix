@@ -97,7 +97,14 @@
         extraArgs = "--manifest-path ./src-tauri/Cargo.toml";
       };
     };
-    prettier.enable = true;
+    prettier = {
+      enable = true;
+      excludes = [
+        ".devcontainer.json"
+        "pnpm-lock.yaml"
+      ];
+    };
+
     # eslint.enable = true;
   };
 }
