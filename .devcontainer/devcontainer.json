@@ -19,6 +19,9 @@
     "ghcr.io/devcontainers/features/node:1": {
       "version": "22",
       "pnpmVersion": "latest"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+      "packages": "libgtk-3-dev,libwebkit2gtk-4.1-dev,libappindicator3-dev,librsvg2-dev,patchelf,libsoup-3.0-dev,libjavascriptcoregtk-4.1-dev,libglib2.0-dev,pkg-config"
     }
   },
   "customizations": {
@@ -36,7 +39,6 @@
       ]
     }
   },
-  "initializeCommand": "sudo apt-get update && sudo apt-get install -y libgtk-3-dev webkit2gtk-4.0 libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libsoup-3.0-dev libjavascriptcoregtk-4.1-dev libglib2.0-dev pkg-config",
   "postCreateCommand": "pnpm install && cargo check --manifest-path ./src-tauri/Cargo.toml",
   "remoteUser": "vscode"
 }
