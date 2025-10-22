@@ -174,10 +174,14 @@ pub async fn stream_file_data(
             return;
         }
 
-        let on_data = |file_name, data: Vec<u8>| {
+        use std::sync::Arc;
+        let on_event = Arc::new(on_event);
+
+        let on_event_data = Arc::clone(&on_event);
+        let on_data = move |file_name, data: Vec<u8>| {
             let data_base64 = BASE64_STANDARD.encode(&data);
 
-            if let Err(e) = on_event.send(StreamProgressEvent::Preview {
+            if let Err(e) = on_event_data.send(StreamProgressEvent::Preview {
                 file_name,
                 data_raw: data,
                 data_base64,
@@ -186,8 +190,9 @@ pub async fn stream_file_data(
             }
         };
 
-        let on_error = |file_name, message| {
-            if let Err(e) = on_event.send(StreamProgressEvent::Error { file_name, message }) {
+        let on_event_error = Arc::clone(&on_event);
+        let on_error = move |file_name, message| {
+            if let Err(e) = on_event_error.send(StreamProgressEvent::Error { file_name, message }) {
                 debug!("Failed to send Error event: {}", e);
             }
         };

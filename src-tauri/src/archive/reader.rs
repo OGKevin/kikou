@@ -1,6 +1,8 @@
 use super::types::{Archive, ArchiveFile, ReadArchiveError};
 use crate::comicinfo::ComicInfo;
+use rayon::prelude::*;
 use std::io::Read;
+use std::sync::Arc;
 
 fn open_zip_archive(path: &str) -> Result<zip::ZipArchive<std::fs::File>, ReadArchiveError> {
     let file = std::fs::File::open(path).map_err(ReadArchiveError::Io)?;
@@ -52,28 +54,36 @@ pub fn get_file_data(path: &str, file_name: &str) -> Result<Vec<u8>, ReadArchive
 pub fn stream_file_data_from_archive(
     path: &str,
     file_names: Vec<String>,
-    on_data: impl Fn(String, Vec<u8>),
-    on_error: impl Fn(String, String),
+    on_data: impl Fn(String, Vec<u8>) + Send + Sync + 'static,
+    on_error: impl Fn(String, String) + Send + Sync + 'static,
 ) -> Result<(), ReadArchiveError> {
-    let mut archive = open_zip_archive(path)?;
+    let _ = open_zip_archive(path)?;
 
-    for file_name in file_names {
-        match archive.by_name(&file_name) {
-            Ok(mut zip_file) => {
-                let mut data = Vec::new();
-                if let Err(e) = zip_file.read_to_end(&mut data) {
-                    on_error(file_name, e.to_string());
+    let on_data = Arc::new(on_data);
+    let on_error = Arc::new(on_error);
+    let path = Arc::new(path.to_string());
 
-                    continue;
+    file_names.par_iter().for_each(|file_name| {
+        match open_zip_archive(&path) {
+            Ok(mut archive) => match archive.by_name(file_name) {
+                Ok(mut zip_file) => {
+                    let mut data = Vec::new();
+                    if let Err(e) = zip_file.read_to_end(&mut data) {
+                        on_error(file_name.clone(), e.to_string());
+                        return;
+                    }
+
+                    on_data(file_name.clone(), data);
                 }
-
-                on_data(file_name, data);
-            }
+                Err(e) => {
+                    on_error(file_name.clone(), e.to_string());
+                }
+            },
             Err(e) => {
-                on_error(file_name, e.to_string());
+                on_error(file_name.clone(), e.to_string());
             }
         }
-    }
+    });
 
     Ok(())
 }
@@ -81,9 +91,8 @@ pub fn stream_file_data_from_archive(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
     use std::io::Write;
-    use std::rc::Rc;
+    use std::sync::{Arc, Mutex};
     use zip::ZipWriter;
     use zip::write::FileOptions;
 
@@ -125,18 +134,18 @@ mod tests {
         let archive =
             TestArchive::new(vec![("file1.txt", b"content1"), ("file2.txt", b"content2")]);
 
-        let data_calls = Rc::new(RefCell::new(Vec::new()));
-        let error_calls = Rc::new(RefCell::new(Vec::new()));
+        let data_calls = Arc::new(Mutex::new(Vec::new()));
+        let error_calls = Arc::new(Mutex::new(Vec::new()));
 
         let data_calls_clone = data_calls.clone();
         let error_calls_clone = error_calls.clone();
 
         let on_data = move |file_name: String, data: Vec<u8>| {
-            data_calls_clone.borrow_mut().push((file_name, data));
+            data_calls_clone.lock().unwrap().push((file_name, data));
         };
 
         let on_error = move |file_name: String, error: String| {
-            error_calls_clone.borrow_mut().push((file_name, error));
+            error_calls_clone.lock().unwrap().push((file_name, error));
         };
 
         let result = stream_file_data_from_archive(
@@ -151,10 +160,17 @@ mod tests {
             "Expected Ok result from streaming file data, but got Err {:?}",
             result
         );
-        assert_eq!(data_calls.borrow().len(), 2);
-        assert_eq!(error_calls.borrow().len(), 0);
 
-        let calls = data_calls.borrow();
+        let data_calls_guard = data_calls.lock().unwrap();
+        let error_calls_guard = error_calls.lock().unwrap();
+
+        assert_eq!(data_calls_guard.len(), 2);
+        assert_eq!(error_calls_guard.len(), 0);
+
+        // Sort by filename for deterministic testing (parallel execution order is not guaranteed)
+        let mut calls = data_calls_guard.clone();
+        calls.sort_by(|a, b| a.0.cmp(&b.0));
+
         assert_eq!(calls[0].0, "file1.txt");
         assert_eq!(calls[0].1, b"content1");
         assert_eq!(calls[1].0, "file2.txt");
@@ -165,18 +181,18 @@ mod tests {
     fn test_stream_file_data_missing_file() {
         let archive = TestArchive::new(vec![("file1.txt", b"content1")]);
 
-        let data_calls = Rc::new(RefCell::new(Vec::new()));
-        let error_calls = Rc::new(RefCell::new(Vec::new()));
+        let data_calls = Arc::new(Mutex::new(Vec::new()));
+        let error_calls = Arc::new(Mutex::new(Vec::new()));
 
         let data_calls_clone = data_calls.clone();
         let error_calls_clone = error_calls.clone();
 
         let on_data = move |file_name: String, data: Vec<u8>| {
-            data_calls_clone.borrow_mut().push((file_name, data));
+            data_calls_clone.lock().unwrap().push((file_name, data));
         };
 
         let on_error = move |file_name: String, error: String| {
-            error_calls_clone.borrow_mut().push((file_name, error));
+            error_calls_clone.lock().unwrap().push((file_name, error));
         };
 
         let result = stream_file_data_from_archive(
@@ -187,30 +203,33 @@ mod tests {
         );
 
         assert!(result.is_ok());
-        assert_eq!(data_calls.borrow().len(), 0);
-        assert_eq!(error_calls.borrow().len(), 1);
+        assert_eq!(data_calls.lock().unwrap().len(), 0);
+        assert_eq!(error_calls.lock().unwrap().len(), 1);
     }
 
     #[test]
     fn test_stream_file_data_empty_list() {
         let archive = TestArchive::new(vec![("file1.txt", b"content1")]);
 
-        let data_calls = Rc::new(RefCell::new(Vec::new()));
-        let error_calls = Rc::new(RefCell::new(Vec::new()));
+        let data_calls = Arc::new(Mutex::new(Vec::new()));
+        let error_calls = Arc::new(Mutex::new(Vec::new()));
 
-        let on_data = |file_name: String, data: Vec<u8>| {
-            data_calls.borrow_mut().push((file_name, data));
+        let data_calls_clone = data_calls.clone();
+        let error_calls_clone = error_calls.clone();
+
+        let on_data = move |file_name: String, data: Vec<u8>| {
+            data_calls_clone.lock().unwrap().push((file_name, data));
         };
 
-        let on_error = |file_name: String, error: String| {
-            error_calls.borrow_mut().push((file_name, error));
+        let on_error = move |file_name: String, error: String| {
+            error_calls_clone.lock().unwrap().push((file_name, error));
         };
 
         let result = stream_file_data_from_archive(archive.path(), vec![], on_data, on_error);
 
         assert!(result.is_ok());
-        assert_eq!(data_calls.borrow().len(), 0);
-        assert_eq!(error_calls.borrow().len(), 0);
+        assert_eq!(data_calls.lock().unwrap().len(), 0);
+        assert_eq!(error_calls.lock().unwrap().len(), 0);
     }
 
     #[test]
