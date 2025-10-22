@@ -7,7 +7,7 @@ commics/manga using the Comicinfo.xml standard.
 
 ## General Instructions
 
-When making changes, ensure that a mojority of the logic is in the rust backend. The frontend should only do visual stuff and call the backend for logic.
+When making changes, ensure that a majority of the logic is in the rust backend. The frontend should only do visual stuff and call the backend for logic.
 
 ## Tooling & devenv
 
