@@ -11,7 +11,34 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend-changed: ${{ steps.changed-frontend-files.outputs.any_changed }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Get changed frontend files
+        id: changed-frontend-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: |
+            src/**/*.ts
+            src/**/*.tsx
+            src/**/*.js
+            src/**/*.jsx
+            package.json
+            pnpm-lock.yaml
+            jest.config.js
+            jest.setup.js
+            next.config.ts
+            tsconfig.json
+            .github/workflows/frontend.yml
+
   test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -30,6 +57,8 @@ jobs:
         run: pnpm test
 
   build:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend-changed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
