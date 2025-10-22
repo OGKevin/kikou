@@ -25,7 +25,7 @@ log = "0.4"
 tauri = { version = "2.9.0", features = ["devtools"] }
 tauri-plugin-log = "2"
 tauri-plugin-dialog = "2"
-zip = "0.6"
+zip = "6.0"
 quick-xml = { version = "0.31", features = ["serialize"] }
 serde-xml-rs = "0.8.1"
 notify = "8"
