@@ -7,7 +7,11 @@ commics/manga using the Comicinfo.xml standard.
 
 ## General Instructions
 
-When making changes, ensure that a mojority of the logic is in the rust backend. The frontend should only do visual stuff and call the backend for logic.
+When making changes, ensure that a majority of the logic is in the rust backend. The frontend should only do visual stuff and call the backend for logic.
+
+## Tooling & devenv
+
+You may use `devenv shell -- <cli args>` for running commands, formatting, linting, building, and testing, both in CI and locally. Prefer this over direct cargo/pnpm commands when possible. If the `DEVENV_ROOT` environment variable is set, you are already inside a devenv shell and should run commands directly (without `devenv shell --`).
 
 ## Rust Files
 
@@ -19,6 +23,10 @@ Next to this, ensure the code compiles and passes all tests by running:
 - `cargo check`
 - `cargo test`
 
+Or use:
+- `devenv shell -- cargo check`
+- `devenv shell -- cargo test`
+
 ## Frontend/Typescript Files
 
 For frontend, `pnpm` and `nextjs` are used.
@@ -26,10 +34,13 @@ For frontend, `pnpm` and `nextjs` are used.
 Prefer to use react components where it makes sense to do so.
 
 To make sure it all works, please run `pnpm build` and `pnpm test`.
+Or use:
+- `devenv shell -- pnpm build`
+- `devenv shell -- pnpm test`
 
 Make sure that all typescript types are correct and there are no `any` or `unknown` types used.
 
-Make sure the code is linted using `pnpm lint`.
+Make sure the code is linted using `pnpm lint` or `devenv shell -- pnpm lint`.
 
 ### Tauri Commands
 
@@ -48,6 +59,8 @@ Tests should be added first before the actual implementation.
 Rust tests can be executed via:
 
 `cargo test --manifest-path=src-tauri/Cargo.toml`
+Or use:
+`devenv shell -- cargo test --manifest-path=src-tauri/Cargo.toml`
 
 ## Code Style
 
@@ -63,5 +76,5 @@ Prefer the use of Traits, Interfaces, Data Objects and Enums to make the code mo
 
 ### Formatting
 
-- For rust, use `cargo fmt` to format the code.
-- For frontend, use `prettier` to format the code.
+- For rust, use `cargo fmt` to format the code or `devenv shell -- cargo fmt`.
+- For frontend, use `prettier` to format the code or `devenv shell -- pnpm fmt`.
