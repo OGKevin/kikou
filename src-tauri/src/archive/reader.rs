@@ -63,35 +63,26 @@ pub fn stream_file_data_from_archive(
     let on_error = Arc::new(on_error);
     let path = Arc::new(path.to_string());
 
-    let pool = rayon::ThreadPoolBuilder::new()
-        .num_threads(5)
-        .build()
-        .map_err(|e| {
-            ReadArchiveError::Io(std::io::Error::other(e.to_string()))
-        })?;
-
-    pool.install(|| {
-        file_names.par_iter().for_each(|file_name| {
-            match open_zip_archive(&path) {
-                Ok(mut archive) => match archive.by_name(file_name) {
-                    Ok(mut zip_file) => {
-                        let mut data = Vec::new();
-                        if let Err(e) = zip_file.read_to_end(&mut data) {
-                            on_error(file_name.clone(), e.to_string());
-                            return;
-                        }
-
-                        on_data(file_name.clone(), data);
-                    }
-                    Err(e) => {
+    file_names.par_iter().for_each(|file_name| {
+        match open_zip_archive(&path) {
+            Ok(mut archive) => match archive.by_name(file_name) {
+                Ok(mut zip_file) => {
+                    let mut data = Vec::new();
+                    if let Err(e) = zip_file.read_to_end(&mut data) {
                         on_error(file_name.clone(), e.to_string());
+                        return;
                     }
-                },
+
+                    on_data(file_name.clone(), data);
+                }
                 Err(e) => {
                     on_error(file_name.clone(), e.to_string());
                 }
+            },
+            Err(e) => {
+                on_error(file_name.clone(), e.to_string());
             }
-        });
+        }
     });
 
     Ok(())
