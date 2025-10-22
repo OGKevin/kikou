@@ -1,0 +1,44 @@
+{
+  "name": "kikou-devcontainer",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/nix:1": {},
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "1.86.0",
+      "channel": "stable",
+      "components": [
+        "clippy",
+        "rustfmt",
+        "cargo",
+        "rustc",
+        "rust-analyzer",
+        "rust-src",
+        "llvm-tools-preview"
+      ]
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22",
+      "pnpmVersion": "latest"
+    },
+    "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
+      "packages": "libgtk-3-dev,libwebkit2gtk-4.1-dev,libappindicator3-dev,librsvg2-dev,patchelf,libsoup-3.0-dev,libjavascriptcoregtk-4.1-dev,libglib2.0-dev,pkg-config"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "rust-analyzer.cargo.useRustcWrapperForBuild": true,
+        "editor.formatOnSave": true,
+        "eslint.enable": true,
+        "prettier.enable": true
+      },
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+  "postCreateCommand": "pnpm install && cargo check --manifest-path ./src-tauri/Cargo.toml",
+  "remoteUser": "vscode"
+}
