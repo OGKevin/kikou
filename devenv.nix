@@ -57,7 +57,10 @@
 
   languages.javascript = {
     enable = true;
-    pnpm.enable = true;
+    pnpm = {
+      enable = true;
+      install.enable = true;
+    };
     npm.enable = true;
   };
 
@@ -79,7 +82,8 @@
     cargo test --manifest-path ./src-tauri/Cargo.toml
     cargo check --manifest-path ./src-tauri/Cargo.toml 
     cargo build --manifest-path ./src-tauri/Cargo.toml
-    nix build
+    nix flake check
+    nix eval
   '';
 
   devcontainer.enable = true;
@@ -105,6 +109,9 @@
       ];
     };
 
-    # eslint.enable = true;
+    # eslint = {
+    #   enable = true;
+    #   files = "src/.*\\.(ts|tsx|js|jsx)$";
+    # };
   };
 }

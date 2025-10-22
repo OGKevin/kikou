@@ -24,11 +24,10 @@ jobs:
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         with:
           files: |
-            **/*.nix
+            flake.nix
             pnpm-lock.yaml
             src-tauri/**/Cargo.lock
             flake.lock
-            devenv.lock
             .github/workflows/nix-build.yml
 
   build:
