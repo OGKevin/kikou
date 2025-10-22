@@ -31,7 +31,8 @@ pub fn update_zip_with_comicinfo(path: &str, xml_content: &str) -> Result<(), St
             }
         }
 
-        let xml_options = FileOptions::default().compression_method(CompressionMethod::Stored);
+        let xml_options =
+            FileOptions::<()>::default().compression_method(CompressionMethod::Stored);
 
         new_archive
             .start_file("ComicInfo.xml", xml_options)
@@ -205,7 +206,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             zip.start_file("image1.jpg", options).expect("start file");
             zip.write_all(b"fake image data").expect("write data");
@@ -274,7 +275,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             zip.start_file("image1.jpg", options).expect("start file");
             zip.write_all(b"fake image data").expect("write data");

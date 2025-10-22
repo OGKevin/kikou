@@ -39,7 +39,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             zip.start_file("image1.jpg", options).expect("start file");
             zip.write_all(b"fake image data").expect("write data");
@@ -110,7 +110,7 @@ mod tests {
             let file = std::fs::File::create(&path).expect("create cbz");
             let mut zip = zip::ZipWriter::new(file);
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
             zip.start_file("image.jpg", options).expect("start file");
             zip.write_all(b"data").expect("write data");
             zip.finish().expect("finish zip");
@@ -154,7 +154,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             zip.start_file("ComicInfo.xml", options)
                 .expect("start file");
@@ -178,7 +178,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             zip.start_file("ComicInfo.xml", options)
                 .expect("start file");
@@ -251,7 +251,7 @@ mod tests {
         {
             let file = std::fs::File::create(&path).expect("create cbz");
             let mut zip = zip::ZipWriter::new(file);
-            let options = zip::write::FileOptions::default()
+            let options = zip::write::FileOptions::<()>::default()
                 .compression_method(zip::CompressionMethod::Stored);
             zip.start_file("ComicInfo.xml", options)
                 .expect("start file");
@@ -296,7 +296,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             for i in 0..5 {
                 let name = format!("image{}.jpg", i);
@@ -418,7 +418,7 @@ mod tests {
             let mut zip = zip::ZipWriter::new(file);
 
             let options =
-                ZipFileOptions::default().compression_method(ZipCompressionMethod::Stored);
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
 
             for i in 0..4 {
                 let name = format!("image{}.jpg", i);
