@@ -24,6 +24,7 @@ Next to this, ensure the code compiles and passes all tests by running:
 - `cargo test`
 
 Or use:
+
 - `devenv shell -- cargo check`
 - `devenv shell -- cargo test`
 
@@ -35,6 +36,7 @@ Prefer to use react components where it makes sense to do so.
 
 To make sure it all works, please run `pnpm build` and `pnpm test`.
 Or use:
+
 - `devenv shell -- pnpm build`
 - `devenv shell -- pnpm test`
 
