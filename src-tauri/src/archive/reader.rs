@@ -57,6 +57,8 @@ pub fn stream_file_data_from_archive(
     on_data: impl Fn(String, Vec<u8>) + Send + Sync + 'static,
     on_error: impl Fn(String, String) + Send + Sync + 'static,
 ) -> Result<(), ReadArchiveError> {
+    let _ = open_zip_archive(path)?;
+
     let on_data = Arc::new(on_data);
     let on_error = Arc::new(on_error);
     let path = Arc::new(path.to_string());
