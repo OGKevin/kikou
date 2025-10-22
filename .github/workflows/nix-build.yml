@@ -25,6 +25,8 @@ jobs:
         with:
           files: |
             **/*.nix
+            pnpm-lock.yaml
+            src-tauri/**/Cargo.lock
             flake.lock
             devenv.lock
             .github/workflows/nix-build.yml
