@@ -312,7 +312,7 @@ mod tests {
 
         {
             let file = std::fs::File::create(&path).expect("create cbz");
-            let mut zip = zip::ZipWriter::new(file);
+            let zip = zip::ZipWriter::new(file);
             zip.finish().expect("finish zip");
         }
 
@@ -334,7 +334,7 @@ mod tests {
 
         {
             let file = std::fs::File::create(&path).expect("create cbz");
-            let mut zip = zip::ZipWriter::new(file);
+            let zip = zip::ZipWriter::new(file);
             zip.finish().expect("finish zip");
         }
 
