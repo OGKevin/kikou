@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { LoadCbzResponse } from "@/types/comic";
+import { LoadCbzResponse, ComicInfo } from "@/types/comic";
 import { devLog } from "@/utils/devLog";
 import { ErrorResponse, ErrorResponseType } from "@/types/errorResponse";
 import { useArchiveEvents } from "@/hooks/useArchiveEvents";
@@ -99,10 +99,13 @@ export function ArchiveProvider({
 
   const reloadComicInfo = useCallback(async () => {
     if (!path) return;
+
     try {
-      const comicInfo: any = await invoke("get_comicinfo", { path });
+      const comicInfo: ComicInfo = await invoke("get_comicinfo", { path });
+
       setResult((prev) => {
         if (!prev) return prev;
+
         return {
           ...prev,
           comic_info: comicInfo,

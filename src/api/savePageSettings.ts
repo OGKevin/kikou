@@ -1,5 +1,4 @@
 import { invoke } from "@tauri-apps/api/core";
-import { ComicPageInfo } from "@/types/comic";
 
 /**
  * The shape of the page settings sent to the backend.
