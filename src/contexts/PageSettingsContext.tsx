@@ -8,7 +8,6 @@ import React, {
   useRef,
   ReactNode,
 } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { savePageSettings } from "@/api/savePageSettings";
 import { ComicPageInfo, createBlankPageInfo } from "../types/comic";
 import { LocalStorageManager } from "../utils/localStorage";
@@ -274,6 +273,7 @@ export function PageSettingsProvider({
         await savePageSettings(path, backendSettings);
         // No need to setOriginalSettings here; reloadComicInfo will update originalSettings via useComicInfo
         // Reload comic info from backend so useComicInfo gets the latest state
+
         if (typeof reloadComicInfo !== "function") {
           throw new Error("reloadComicInfo is null");
         }
