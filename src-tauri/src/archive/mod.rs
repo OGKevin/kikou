@@ -238,9 +238,10 @@ mod tests {
             zip.finish().expect("finish zip");
         }
 
-        // Save page settings to add ComicInfo with filenames
-        let mut settings: HashMap<String, super::writer::PageSettings> = HashMap::new();
-        settings.insert(
+        // Create initial ComicInfo with page settings to populate filenames
+        let mut page_settings_with_filenames: HashMap<String, super::writer::PageSettings> =
+            HashMap::new();
+        page_settings_with_filenames.insert(
             "cover.jpg".to_string(),
             super::writer::PageSettings {
                 page_type: ComicPageType::FrontCover,
@@ -249,7 +250,7 @@ mod tests {
                 image: 0,
             },
         );
-        settings.insert(
+        page_settings_with_filenames.insert(
             "page1.jpg".to_string(),
             super::writer::PageSettings {
                 page_type: ComicPageType::Story,
@@ -259,14 +260,15 @@ mod tests {
             },
         );
 
-        let res = super::writer::save_page_settings_impl(path.clone(), settings);
+        let res =
+            super::writer::save_page_settings_impl(path.clone(), page_settings_with_filenames);
         assert!(
             res.is_ok(),
             "save_page_settings_impl failed: {:?}",
             res.err()
         );
 
-        // Now get the raw XML and verify it contains filename comments
+        // Verify get_raw_comicinfo_xml returns comments for XML editor
         let result = get_raw_comicinfo_xml(path.clone()).unwrap();
         assert!(result.is_some(), "ComicInfo.xml should exist");
 
