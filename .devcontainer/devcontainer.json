@@ -28,7 +28,10 @@
       "packages": "tauri-cli"
     },
     "ghcr.io/lee-orr/rusty-dev-containers/cargo-llvm-cov:0": {},
-    "ghcr.io/lee-orr/rusty-dev-containers/cargo-nextest:0": {}
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-nextest:0": {},
+    "ghcr.io/devcontainers/features/sshd:1": {
+      "version": "latest"
+    }
   },
   "forwardPorts": [6080],
   "portsAttributes": {
