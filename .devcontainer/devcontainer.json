@@ -4,7 +4,6 @@
   "features": {
     "ghcr.io/devcontainers/features/nix:1": {},
     "ghcr.io/devcontainers/features/rust:1": {
-      "version": "1.86.0",
       "channel": "stable",
       "components": [
         "clippy",
@@ -22,6 +21,19 @@
     },
     "ghcr.io/rocker-org/devcontainer-features/apt-packages:1": {
       "packages": "libgtk-3-dev,libwebkit2gtk-4.1-dev,libappindicator3-dev,librsvg2-dev,patchelf,libsoup-3.0-dev,libjavascriptcoregtk-4.1-dev,libglib2.0-dev,pkg-config"
+    },
+    "ghcr.io/schlich/devcontainer-features/jujutsu:0": {},
+    "ghcr.io/devcontainers/features/desktop-lite:1": {},
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-binstall:0": {
+      "packages": "tauri-cli"
+    },
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-llvm-cov:0": {},
+    "ghcr.io/lee-orr/rusty-dev-containers/cargo-nextest:0": {}
+  },
+  "forwardPorts": [6080],
+  "portsAttributes": {
+    "6080": {
+      "label": "desktop"
     }
   },
   "customizations": {
@@ -35,10 +47,14 @@
       "extensions": [
         "rust-lang.rust-analyzer",
         "esbenp.prettier-vscode",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "Orta.vscode-jest"
       ]
     }
   },
-  "postCreateCommand": "pnpm install && cargo check --manifest-path ./src-tauri/Cargo.toml",
-  "remoteUser": "vscode"
+  "postCreateCommand": "sudo chown -R vscode:rustlang /usr/local/cargo/registry && pnpm install && cargo check --manifest-path=./src-tauri/Cargo.toml",
+  "remoteUser": "vscode",
+  "remoteEnv": {
+    "PATH": "${containerWorkspaceFolder}/node_modules/.bin:${containerEnv:PATH}"
+  }
 }

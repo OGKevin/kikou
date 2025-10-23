@@ -26,5 +26,8 @@
   "jest.rootPath": "src",
   "jest.runMode": "on-demand",
   "rust-analyzer.cargo.features": "all",
-  "rust-analyzer.check.command": "clippy"
+  "rust-analyzer.check.command": "clippy",
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
