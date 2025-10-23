@@ -220,6 +220,7 @@ A secret double life begins—one he can't tell anyone about!
                     bookmark: "".to_string(),
                     image_width: -1,
                     image_height: -1,
+                    filename: None,
                 }],
             }),
             ..ComicInfo::default()
@@ -244,6 +245,7 @@ A secret double life begins—one he can't tell anyone about!
                         key: "".to_string(),
                         image_width: -1,
                         image_height: -1,
+                        filename: None,
                     },
                     ComicPageInfo {
                         image: 1,
@@ -254,6 +256,7 @@ A secret double life begins—one he can't tell anyone about!
                         key: "".to_string(),
                         image_width: -1,
                         image_height: -1,
+                        filename: None,
                     },
                 ],
             }),

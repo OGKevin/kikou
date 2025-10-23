@@ -37,6 +37,7 @@ pub struct ComicPageInfo {
     pub type_: Option<ComicPageType>,
     pub key: String,
     pub bookmark: String,
+    pub filename: Option<String>,
 }
 
 impl ComicPageInfo {
@@ -63,6 +64,7 @@ impl ComicPageInfo {
             },
             key: String::new(),
             bookmark,
+            filename: None,
         }
     }
 }
@@ -148,6 +150,7 @@ impl<'de> serde::Deserialize<'de> for ComicPageInfo {
             type_: strict.type_,
             key: strict.key,
             bookmark: strict.bookmark,
+            filename: None,
         })
     }
 }
@@ -204,6 +207,7 @@ mod tests {
             type_: Some(ComicPageType::Story),
             key: "k".to_string(),
             bookmark: "b".to_string(),
+            filename: None,
         };
 
         let xml = serde_xml_rs::to_string(&page).unwrap();
@@ -255,6 +259,7 @@ mod tests {
             type_: Some(ComicPageType::Story),
             key: "".to_string(),
             bookmark: "book".to_string(),
+            filename: None,
         };
 
         let xml = serde_xml_rs::to_string(&page).unwrap();

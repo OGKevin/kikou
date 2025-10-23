@@ -351,12 +351,81 @@ impl ComicInfo {
         let mut output = Vec::new();
         let mut writer = Writer::new_with_indent(Cursor::new(&mut output), b' ', 2);
 
+        // Build a map of image index to filename from pages
+        let page_filenames: std::collections::HashMap<i32, String> = self
+            .pages
+            .as_ref()
+            .map(|pages| {
+                pages
+                    .page
+                    .iter()
+                    .filter_map(|p| p.filename.as_ref().map(|f| (p.image, f.clone())))
+                    .collect()
+            })
+            .unwrap_or_default();
+
         loop {
             match reader.read_event() {
                 Ok(Event::Eof) => break,
                 Ok(Event::Decl(decl)) => {
                     writer
                         .write_event(Event::Decl(decl))
+                        .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+                }
+                Ok(Event::Empty(e)) if e.name().as_ref() == b"Page" => {
+                    // Get the image index from the attributes
+                    let image_idx = e
+                        .attributes()
+                        .filter_map(|a| a.ok())
+                        .find(|attr| attr.key.as_ref() == b"Image")
+                        .and_then(|attr| {
+                            std::str::from_utf8(&attr.value)
+                                .ok()
+                                .and_then(|s| s.parse::<i32>().ok())
+                        });
+
+                    // Write comment if we have a filename for this page
+                    if let Some(idx) = image_idx {
+                        if let Some(filename) = page_filenames.get(&idx) {
+                            let comment = format!(" filename: {} ", filename);
+                            writer
+                                .write_event(Event::Comment(quick_xml::events::BytesText::new(
+                                    &comment,
+                                )))
+                                .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+                        }
+                    }
+
+                    writer
+                        .write_event(Event::Empty(e))
+                        .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+                }
+                Ok(Event::Start(e)) if e.name().as_ref() == b"Page" => {
+                    // Get the image index from the attributes
+                    let image_idx = e
+                        .attributes()
+                        .filter_map(|a| a.ok())
+                        .find(|attr| attr.key.as_ref() == b"Image")
+                        .and_then(|attr| {
+                            std::str::from_utf8(&attr.value)
+                                .ok()
+                                .and_then(|s| s.parse::<i32>().ok())
+                        });
+
+                    // Write comment if we have a filename for this page
+                    if let Some(idx) = image_idx {
+                        if let Some(filename) = page_filenames.get(&idx) {
+                            let comment = format!(" filename: {} ", filename);
+                            writer
+                                .write_event(Event::Comment(quick_xml::events::BytesText::new(
+                                    &comment,
+                                )))
+                                .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+                        }
+                    }
+
+                    writer
+                        .write_event(Event::Start(e))
                         .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
                 }
                 Ok(event) => {
@@ -593,6 +662,8 @@ pub fn format_comicinfo_xml_str(xml: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::comicinfo::{ComicPageInfo, ComicPageType};
+
     #[test]
     fn test_format_comicinfo_xml_str() {
         let input_xml = r#"<ComicInfo><Title>Test Comic</Title></ComicInfo>"#;
@@ -657,5 +728,145 @@ mod tests {
             expected,
             err_msg
         );
+    }
+
+    #[test]
+    fn test_to_xml_with_filename_comments() {
+        let comic = ComicInfo {
+            pages: Some(Pages {
+                page: vec![
+                    ComicPageInfo {
+                        image: 0,
+                        type_: Some(ComicPageType::FrontCover),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        bookmark: "Cover".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                        filename: Some("cover.jpg".to_string()),
+                    },
+                    ComicPageInfo {
+                        image: 1,
+                        type_: Some(ComicPageType::Story),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        bookmark: "Chapter 1".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                        filename: Some("page001.jpg".to_string()),
+                    },
+                ],
+            }),
+            ..ComicInfo::default()
+        };
+
+        let xml = comic.to_xml().unwrap();
+
+        // Verify comments are present in the XML
+        assert!(
+            xml.contains("<!-- filename: cover.jpg -->"),
+            "XML should contain comment for cover.jpg"
+        );
+        assert!(
+            xml.contains("<!-- filename: page001.jpg -->"),
+            "XML should contain comment for page001.jpg"
+        );
+
+        // Verify the structure is correct
+        assert!(xml.contains("<Pages>"));
+        assert!(xml.contains("Image=\"0\""));
+        assert!(xml.contains("Image=\"1\""));
+        assert!(xml.contains("Type=\"FrontCover\""));
+        assert!(xml.contains("Bookmark=\"Cover\""));
+    }
+
+    #[test]
+    fn test_to_xml_without_filename_comments() {
+        let comic = ComicInfo {
+            pages: Some(Pages {
+                page: vec![ComicPageInfo {
+                    image: 0,
+                    type_: Some(ComicPageType::Story),
+                    double_page: false,
+                    image_size: 0,
+                    key: "".to_string(),
+                    bookmark: "".to_string(),
+                    image_width: -1,
+                    image_height: -1,
+                    filename: None,
+                }],
+            }),
+            ..ComicInfo::default()
+        };
+
+        let xml = comic.to_xml().unwrap();
+
+        // Verify no comments are present when filename is None
+        assert!(
+            !xml.contains("<!-- filename:"),
+            "XML should not contain filename comments when filename is None"
+        );
+    }
+
+    #[test]
+    fn test_to_xml_mixed_filename_comments() {
+        let comic = ComicInfo {
+            pages: Some(Pages {
+                page: vec![
+                    ComicPageInfo {
+                        image: 0,
+                        type_: Some(ComicPageType::FrontCover),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        bookmark: "".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                        filename: Some("cover.jpg".to_string()),
+                    },
+                    ComicPageInfo {
+                        image: 1,
+                        type_: Some(ComicPageType::Story),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        bookmark: "".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                        filename: None, // This one has no filename
+                    },
+                    ComicPageInfo {
+                        image: 2,
+                        type_: Some(ComicPageType::BackCover),
+                        double_page: false,
+                        image_size: 0,
+                        key: "".to_string(),
+                        bookmark: "".to_string(),
+                        image_width: -1,
+                        image_height: -1,
+                        filename: Some("back.jpg".to_string()),
+                    },
+                ],
+            }),
+            ..ComicInfo::default()
+        };
+
+        let xml = comic.to_xml().unwrap();
+
+        // Verify only the pages with filenames have comments
+        assert!(
+            xml.contains("<!-- filename: cover.jpg -->"),
+            "XML should contain comment for cover.jpg"
+        );
+        assert!(
+            xml.contains("<!-- filename: back.jpg -->"),
+            "XML should contain comment for back.jpg"
+        );
+
+        // Count occurrences - should be exactly 2 comments
+        let comment_count = xml.matches("<!-- filename:").count();
+        assert_eq!(comment_count, 2, "Should have exactly 2 filename comments");
     }
 }
