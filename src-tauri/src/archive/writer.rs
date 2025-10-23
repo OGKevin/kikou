@@ -89,6 +89,53 @@ pub struct PageSettings {
     pub image: i32,
 }
 
+/// Builds the page list for ComicInfo based on provided settings.
+///
+/// This function implements a deletion-by-omission strategy where only pages
+/// explicitly provided in the settings map are included in the final page list.
+/// Any page not present in the settings will be excluded from the XML, effectively
+/// deleting it from the ComicInfo metadata.
+///
+/// For pages that are included, the function preserves metadata (image dimensions,
+/// size, and key) from the original ComicInfo if available, while updating the
+/// user-editable fields (page type, double page flag, and bookmark) from the
+/// provided settings.
+///
+/// # Arguments
+///
+/// * `pages` - Mutable reference to the Pages structure that will be populated
+/// * `sorted_files` - Sorted list of image filenames in the archive
+/// * `page_settings` - Map of filename to PageSettings for pages to keep/update
+/// * `original_pages_map` - Map of image index to original ComicPageInfo for preserving metadata
+fn build_page_list(
+    pages: &mut Pages,
+    sorted_files: &[String],
+    page_settings: &HashMap<String, PageSettings>,
+    original_pages_map: &HashMap<i32, ComicPageInfo>,
+) {
+    for (index, file_name) in sorted_files.iter().enumerate() {
+        let image_index = index as i32;
+
+        if let Some(settings) = page_settings.get(file_name) {
+            let mut page_info = ComicPageInfo::from_page_settings(
+                settings.page_type.clone(),
+                settings.double_page,
+                settings.bookmark.clone(),
+                image_index,
+            );
+
+            if let Some(original_page) = original_pages_map.get(&image_index) {
+                page_info.image_height = original_page.image_height;
+                page_info.image_size = original_page.image_size;
+                page_info.image_width = original_page.image_width;
+                page_info.key = original_page.key.clone();
+            }
+
+            pages.page.push(page_info);
+        }
+    }
+}
+
 /// Business logic for saving page settings
 pub fn save_page_settings_impl(
     path: String,
@@ -123,33 +170,12 @@ pub fn save_page_settings_impl(
 
     pages.page.clear();
 
-    for (index, file_name) in sorted.iter().enumerate() {
-        let image_index = index as i32;
-
-        if let Some(settings) = page_settings.get(file_name) {
-            // Create a new page based on provided settings and merge original metadata if present
-            let mut page_info = ComicPageInfo::from_page_settings(
-                settings.page_type.clone(),
-                settings.double_page,
-                settings.bookmark.clone(),
-                image_index,
-            );
-
-            if let Some(original_page) = original_pages_map.get(&image_index) {
-                page_info.image_height = original_page.image_height;
-                page_info.image_size = original_page.image_size;
-                page_info.image_width = original_page.image_width;
-                page_info.key = original_page.key.clone();
-            }
-
-            pages.page.push(page_info);
-        }
-
-        // Only include pages that are explicitly provided in settings.
-        // Pages not in settings are deleted from the XML, regardless of whether
-        // they existed in the original ComicInfo. This implements the deletion
-        // scenario where the frontend sends only the pages it wants to keep.
-    }
+    build_page_list(
+        pages,
+        &sorted,
+        &page_settings,
+        &original_pages_map,
+    );
 
     suppress_next_archive_event(&path);
     let xml_content = updated_comic_info.to_xml().map_err(|e| e.to_string())?;

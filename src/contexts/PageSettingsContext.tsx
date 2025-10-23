@@ -274,10 +274,6 @@ export function PageSettingsProvider({
         // No need to setOriginalSettings here; reloadComicInfo will update originalSettings via useComicInfo
         // Reload comic info from backend so useComicInfo gets the latest state
 
-        if (typeof reloadComicInfo !== "function") {
-          throw new Error("reloadComicInfo is not a function");
-        }
-
         await reloadComicInfo();
       } else {
         devLog("No edited pages to save");

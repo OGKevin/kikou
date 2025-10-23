@@ -59,9 +59,7 @@ export default function XmlEditor({
       showSuccessMessage("save");
       clearValidation();
 
-      if (typeof reloadComicInfo === "function") {
-        await reloadComicInfo();
-      }
+      await reloadComicInfo();
 
       if (onAfterSave) onAfterSave();
     }
