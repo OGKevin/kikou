@@ -7,6 +7,7 @@ import { useRouter } from "next/router";
 import { useComicInfoXML } from "@/hooks/useComicInfoXML";
 import { useXmlEditorUI } from "@/hooks/useXmlEditorUI";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useComicInfo } from "@/hooks/useComicInfo";
 
 interface XmlEditorProps {
   onAfterSave?: () => void;
@@ -22,6 +23,7 @@ export default function XmlEditor({
   const path = router.query.path as string;
   const xmlOps = useComicInfoXML(path);
   const xmlUI = useXmlEditorUI();
+  const { reloadComicInfo } = useComicInfo();
 
   const {
     xml,
@@ -56,6 +58,8 @@ export default function XmlEditor({
     if (success) {
       showSuccessMessage("save");
       clearValidation();
+
+      await reloadComicInfo();
 
       if (onAfterSave) onAfterSave();
     }

@@ -1,21 +1,15 @@
 {
-  "chat.tools.autoApprove": false,
-  "github.copilot.chat.agent.terminal.allowList": {
-    "pnpm test": true,
-    "pnpm build": true,
-    "pnpm lint": true,
-    "pnpm tsc --noEmit": true,
-    "cargo test --manifest-path=src-tauri/Cargo.toml": true,
-    "cargo check --manifest-path=src-tauri/Cargo.toml": true,
-    "prettier --write src": true,
-    "eslint src": true,
-    "npx jest": true
+  "chat.tools.terminal.autoApprove": {
+    "pnpm": true,
+    "cargo": true,
+    "prettier": true,
+    "eslint": true
   },
   "eslint.lintTask.options": "src",
   "eslint.lintTask.enable": true,
   "inlineChat.enableV2": true,
   "rust-analyzer.testExplorer": true,
-  "rust-analyzer.cargo.targetDir": true,
+  "rust-analyzer.cargo.targetDir": false,
   "rust-analyzer.cargo.allTargets": true,
   "rust-analyzer.interpret.tests": true,
   "jest.enable": true,

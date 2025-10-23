@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { LoadCbzResponse } from "@/types/comic";
+import { LoadCbzResponse, ComicInfo } from "@/types/comic";
 import { devLog } from "@/utils/devLog";
 import { ErrorResponse, ErrorResponseType } from "@/types/errorResponse";
 import { useArchiveEvents } from "@/hooks/useArchiveEvents";
@@ -20,6 +20,7 @@ type ArchiveContextValue = {
   loading: boolean;
   error: ErrorResponse | null;
   reload: () => void;
+  reloadComicInfo: () => Promise<void>;
   previewCache: React.RefObject<Record<string, string>>;
   tocFile: string | null;
   setTocFile: React.Dispatch<React.SetStateAction<string | null>>;
@@ -93,9 +94,27 @@ export function ArchiveProvider({
 
   const reload = useCallback(() => {
     devLog("ArchiveContext: reload called");
-
     load();
   }, [load]);
+
+  const reloadComicInfo = useCallback(async () => {
+    if (!path) return;
+
+    try {
+      const comicInfo: ComicInfo = await invoke("get_comicinfo", { path });
+
+      setResult((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          comic_info: comicInfo,
+        };
+      });
+    } catch (err) {
+      devLog("ArchiveContext: reloadComicInfo error", err);
+    }
+  }, [path]);
 
   useEffect(() => {
     if (!path) {
@@ -151,6 +170,7 @@ export function ArchiveProvider({
         loading,
         error,
         reload,
+        reloadComicInfo,
         previewCache,
         tocFile,
         setTocFile,
