@@ -275,7 +275,7 @@ export function PageSettingsProvider({
         // Reload comic info from backend so useComicInfo gets the latest state
 
         if (typeof reloadComicInfo !== "function") {
-          throw new Error("reloadComicInfo is null");
+          throw new Error("reloadComicInfo is not a function");
         }
 
         await reloadComicInfo();
