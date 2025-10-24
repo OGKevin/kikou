@@ -1,0 +1,3 @@
+[submodule "third_party/calibre"]
+	path = third_party/calibre
+	url = https://github.com/kovidgoyal/calibre.git
