@@ -218,6 +218,74 @@ mod tests {
     }
 
     #[test]
+    fn test_get_raw_comicinfo_xml_includes_filename_comments() {
+        let path = test_path("test_raw_xml_with_comments.cbz");
+        let _ = std::fs::remove_file(&path);
+
+        {
+            let file = std::fs::File::create(&path).expect("create cbz");
+            let mut zip = zip::ZipWriter::new(file);
+
+            let options =
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
+
+            zip.start_file("cover.jpg", options).expect("start file");
+            zip.write_all(b"fake cover").expect("write data");
+
+            zip.start_file("page1.jpg", options).expect("start file");
+            zip.write_all(b"fake page 1").expect("write data");
+
+            zip.finish().expect("finish zip");
+        }
+
+        // Create initial ComicInfo with page settings to populate filenames
+        let mut page_settings_with_filenames: HashMap<String, super::writer::PageSettings> =
+            HashMap::new();
+        page_settings_with_filenames.insert(
+            "cover.jpg".to_string(),
+            super::writer::PageSettings {
+                page_type: ComicPageType::FrontCover,
+                double_page: false,
+                bookmark: "Cover".to_string(),
+                image: 0,
+            },
+        );
+        page_settings_with_filenames.insert(
+            "page1.jpg".to_string(),
+            super::writer::PageSettings {
+                page_type: ComicPageType::Story,
+                double_page: false,
+                bookmark: "Chapter 1".to_string(),
+                image: 1,
+            },
+        );
+
+        let res =
+            super::writer::save_page_settings_impl(path.clone(), page_settings_with_filenames);
+        assert!(
+            res.is_ok(),
+            "save_page_settings_impl failed: {:?}",
+            res.err()
+        );
+
+        // Verify get_raw_comicinfo_xml returns comments for XML editor
+        let result = get_raw_comicinfo_xml(path.clone()).unwrap();
+        assert!(result.is_some(), "ComicInfo.xml should exist");
+
+        let xml = result.unwrap();
+        assert!(
+            xml.contains("<!-- filename: cover.jpg -->"),
+            "Raw XML should contain comment for cover.jpg"
+        );
+        assert!(
+            xml.contains("<!-- filename: page1.jpg -->"),
+            "Raw XML should contain comment for page1.jpg"
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
     fn test_save_comicinfo_xml_valid_and_invalid() {
         let path = test_path("test_save_xml.cbz");
         let _ = std::fs::remove_file(&path);

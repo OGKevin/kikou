@@ -131,6 +131,9 @@ fn build_page_list(
                 page_info.key = original_page.key.clone();
             }
 
+            // Set the filename for XML comment generation
+            page_info.filename = Some(file_name.clone());
+
             pages.page.push(page_info);
         }
     }
@@ -170,12 +173,7 @@ pub fn save_page_settings_impl(
 
     pages.page.clear();
 
-    build_page_list(
-        pages,
-        &sorted,
-        &page_settings,
-        &original_pages_map,
-    );
+    build_page_list(pages, &sorted, &page_settings, &original_pages_map);
 
     suppress_next_archive_event(&path);
     let xml_content = updated_comic_info.to_xml().map_err(|e| e.to_string())?;
@@ -184,12 +182,75 @@ pub fn save_page_settings_impl(
     Ok(())
 }
 
+/// Restores filenames from existing ComicInfo pages by matching image indices.
+///
+/// When a ComicInfo is being edited, this function attempts to preserve the
+/// filename information by matching pages in the new ComicInfo with those in
+/// the existing ComicInfo based on their image index. This ensures that manual
+/// XML edits do not lose the filename mapping.
+fn restore_filenames_from_existing_pages(
+    comic_info: &mut ComicInfo,
+    archive: &super::types::Archive,
+) {
+    if let Some(existing_comic_info) = &archive.comic_info {
+        if let (Some(new_pages), Some(existing_pages)) =
+            (&mut comic_info.pages, &existing_comic_info.pages)
+        {
+            let filename_map: std::collections::HashMap<i32, String> = existing_pages
+                .page
+                .iter()
+                .filter_map(|p| p.filename.as_ref().map(|f| (p.image, f.clone())))
+                .collect();
+
+            for page in &mut new_pages.page {
+                if let Some(filename) = filename_map.get(&page.image) {
+                    page.filename = Some(filename.clone());
+                }
+            }
+        }
+    }
+}
+
+/// Populates filenames for pages that don't have them by matching with archive files.
+///
+/// For pages without filenames (typically new pages or pages from external sources),
+/// this function maps them to actual image files in the archive by using the image
+/// index to look up the corresponding file in the sorted list of archive images.
+fn populate_filenames_from_archive(comic_info: &mut ComicInfo, archive: &super::types::Archive) {
+    if let Some(ref mut pages) = comic_info.pages {
+        let image_files = archive
+            .files
+            .iter()
+            .filter(|f| is_image_file(&f.name))
+            .map(|f| f.name.clone())
+            .collect::<Vec<_>>();
+
+        let mut sorted = image_files;
+        sorted.sort();
+
+        for page in &mut pages.page {
+            if page.filename.is_none() {
+                let index = page.image as usize;
+                if let Some(filename) = sorted.get(index) {
+                    page.filename = Some(filename.clone());
+                }
+            }
+        }
+    }
+}
+
 /// Business logic for saving ComicInfo XML
 pub fn save_comicinfo_xml_impl(path: String, xml: String) -> Result<String, String> {
     debug!("Saving ComicInfo XML to {} with xml {}", path, xml);
 
-    let comic_info: ComicInfo = serde_xml_rs::from_str(&xml).map_err(|e| e.to_string())?;
+    let mut comic_info: ComicInfo = serde_xml_rs::from_str(&xml).map_err(|e| e.to_string())?;
     comic_info.validate().map_err(|e| e.to_string())?;
+
+    let archive = read_archive(&path).map_err(|e| e.to_string())?;
+
+    restore_filenames_from_existing_pages(&mut comic_info, &archive);
+    populate_filenames_from_archive(&mut comic_info, &archive);
+
     let formatted_xml = comic_info.to_xml().map_err(|e| e.to_string())?;
 
     suppress_next_archive_event(&path);
@@ -753,6 +814,224 @@ mod tests {
             // image3 should remain
             assert_eq!(pages[1].bookmark, "Page 3");
         }
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_save_page_settings_writes_filename_comments() {
+        let path = test_path("test_filename_comments.cbz");
+        let _ = std::fs::remove_file(&path);
+
+        {
+            let file = std::fs::File::create(&path).expect("create cbz");
+            let mut zip = zip::ZipWriter::new(file);
+
+            let options =
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
+
+            zip.start_file("cover.jpg", options).expect("start file");
+            zip.write_all(b"fake cover").expect("write data");
+
+            zip.start_file("page001.jpg", options).expect("start file");
+            zip.write_all(b"fake page 1").expect("write data");
+
+            zip.start_file("page002.jpg", options).expect("start file");
+            zip.write_all(b"fake page 2").expect("write data");
+
+            zip.finish().expect("finish zip");
+        }
+
+        let mut settings: HashMap<String, PageSettings> = HashMap::new();
+        settings.insert(
+            "cover.jpg".to_string(),
+            PageSettings {
+                page_type: ComicPageType::FrontCover,
+                double_page: false,
+                bookmark: "Cover".to_string(),
+                image: 0,
+            },
+        );
+        settings.insert(
+            "page001.jpg".to_string(),
+            PageSettings {
+                page_type: ComicPageType::Story,
+                double_page: false,
+                bookmark: "Chapter 1".to_string(),
+                image: 1,
+            },
+        );
+        settings.insert(
+            "page002.jpg".to_string(),
+            PageSettings {
+                page_type: ComicPageType::Story,
+                double_page: false,
+                bookmark: "".to_string(),
+                image: 2,
+            },
+        );
+
+        let res = save_page_settings_impl(path.clone(), settings);
+        assert!(
+            res.is_ok(),
+            "save_page_settings_impl failed: {:?}",
+            res.err()
+        );
+
+        // Read the raw XML and verify it contains filename comments
+        let file = std::fs::File::open(&path).expect("open cbz");
+        let mut archive = zip::ZipArchive::new(file).expect("open zip archive");
+        let mut comic_file = archive.by_name("ComicInfo.xml").expect("comicinfo exists");
+        let mut xml = String::new();
+        comic_file.read_to_string(&mut xml).expect("read xml");
+
+        // Verify filename comments are present
+        assert!(
+            xml.contains("<!-- filename: cover.jpg -->"),
+            "XML should contain comment for cover.jpg"
+        );
+        assert!(
+            xml.contains("<!-- filename: page001.jpg -->"),
+            "XML should contain comment for page001.jpg"
+        );
+        assert!(
+            xml.contains("<!-- filename: page002.jpg -->"),
+            "XML should contain comment for page002.jpg"
+        );
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_save_comicinfo_xml_preserves_filename_comments() {
+        let path = test_path("test_xml_save_preserves_comments.cbz");
+        let _ = std::fs::remove_file(&path);
+
+        {
+            let file = std::fs::File::create(&path).expect("create cbz");
+            let mut zip = zip::ZipWriter::new(file);
+
+            let options =
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
+
+            zip.start_file("image1.jpg", options).expect("start file");
+            zip.write_all(b"fake image 1").expect("write data");
+
+            zip.start_file("image2.jpg", options).expect("start file");
+            zip.write_all(b"fake image 2").expect("write data");
+
+            zip.finish().expect("finish zip");
+        }
+
+        // First, create initial ComicInfo with page settings so filenames are set
+        {
+            let mut initial_settings: HashMap<String, PageSettings> = HashMap::new();
+            initial_settings.insert(
+                "image1.jpg".to_string(),
+                PageSettings {
+                    page_type: ComicPageType::FrontCover,
+                    double_page: false,
+                    bookmark: "Cover".to_string(),
+                    image: 0,
+                },
+            );
+            initial_settings.insert(
+                "image2.jpg".to_string(),
+                PageSettings {
+                    page_type: ComicPageType::Story,
+                    double_page: false,
+                    bookmark: "".to_string(),
+                    image: 1,
+                },
+            );
+
+            save_page_settings_impl(path.clone(), initial_settings).expect("initial save failed");
+        }
+
+        // Now edit the XML manually (simulating user editing in XmlEditor)
+        let edited_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<ComicInfo>
+  <Title>My Edited Comic</Title>
+  <Pages>
+    <Page Image="0" Type="FrontCover" Bookmark="New Cover Name" />
+    <Page Image="1" Type="Story" Bookmark="New Chapter" />
+  </Pages>
+</ComicInfo>"#;
+
+        let result = save_comicinfo_xml_impl(path.clone(), edited_xml.to_string());
+        assert!(
+            result.is_ok(),
+            "save_comicinfo_xml_impl failed: {:?}",
+            result.err()
+        );
+
+        // Verify that the returned XML contains filename comments
+        let saved_xml = result.unwrap();
+        assert!(
+            saved_xml.contains("<!-- filename: image1.jpg -->"),
+            "Saved XML should contain comment for image1.jpg"
+        );
+        assert!(
+            saved_xml.contains("<!-- filename: image2.jpg -->"),
+            "Saved XML should contain comment for image2.jpg"
+        );
+
+        // Also verify the edited content is preserved
+        assert!(saved_xml.contains("<Title>My Edited Comic</Title>"));
+        assert!(saved_xml.contains("Bookmark=\"New Cover Name\""));
+        assert!(saved_xml.contains("Bookmark=\"New Chapter\""));
+
+        let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn test_save_comicinfo_xml_adds_filename_comments_for_new_pages() {
+        let path = test_path("test_xml_new_pages_comments.cbz");
+        let _ = std::fs::remove_file(&path);
+
+        {
+            let file = std::fs::File::create(&path).expect("create cbz");
+            let mut zip = zip::ZipWriter::new(file);
+
+            let options =
+                ZipFileOptions::<()>::default().compression_method(ZipCompressionMethod::Stored);
+
+            zip.start_file("page1.jpg", options).expect("start file");
+            zip.write_all(b"fake page 1").expect("write data");
+
+            zip.start_file("page2.jpg", options).expect("start file");
+            zip.write_all(b"fake page 2").expect("write data");
+
+            zip.finish().expect("finish zip");
+        }
+
+        // User creates new ComicInfo XML from scratch
+        let new_xml = r#"<?xml version="1.0" encoding="UTF-8"?>
+<ComicInfo>
+  <Title>New Comic</Title>
+  <Pages>
+    <Page Image="0" Type="FrontCover" />
+    <Page Image="1" Type="Story" />
+  </Pages>
+</ComicInfo>"#;
+
+        let result = save_comicinfo_xml_impl(path.clone(), new_xml.to_string());
+        assert!(
+            result.is_ok(),
+            "save_comicinfo_xml_impl failed: {:?}",
+            result.err()
+        );
+
+        // Verify that the XML gets filename comments even for brand new pages
+        let saved_xml = result.unwrap();
+        assert!(
+            saved_xml.contains("<!-- filename: page1.jpg -->"),
+            "Saved XML should contain comment for page1.jpg"
+        );
+        assert!(
+            saved_xml.contains("<!-- filename: page2.jpg -->"),
+            "Saved XML should contain comment for page2.jpg"
+        );
 
         let _ = std::fs::remove_file(&path);
     }
