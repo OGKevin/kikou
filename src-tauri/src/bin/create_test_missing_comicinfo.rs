@@ -1,6 +1,6 @@
 use std::fs::{self, File};
 use std::io::{self, Write};
-use zip::{ZipWriter, write::FileOptions};
+use zip::{write::FileOptions, ZipWriter};
 
 fn main() -> io::Result<()> {
     let output_path = "../tmp/test_missing_comicinfo.cbz";

@@ -1,0 +1,122 @@
+use crate::error::{CalibreDbError, Result};
+use rusqlite::Connection;
+use std::path::Path;
+
+pub struct DatabaseConnection {
+    conn: Connection,
+}
+
+impl DatabaseConnection {
+    pub fn new<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let conn = Connection::open(path)?;
+        conn.pragma_update(None, "journal_mode", "WAL")?;
+        Ok(DatabaseConnection { conn })
+    }
+
+    pub fn query_row<F, T>(&self, query: &str, params: &[&dyn rusqlite::ToSql], f: F) -> Result<T>
+    where
+        F: FnOnce(&rusqlite::Row) -> rusqlite::Result<T>,
+    {
+        self.conn
+            .query_row(query, params, f)
+            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+    }
+
+    pub fn prepare(&self, query: &str) -> Result<rusqlite::Statement> {
+        self.conn
+            .prepare(query)
+            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+    }
+
+    pub fn execute(&self, query: &str, params: &[&dyn rusqlite::ToSql]) -> Result<usize> {
+        self.conn
+            .execute(query, params)
+            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+    }
+}
+
+pub struct Schema;
+
+impl Schema {
+    pub fn validate_books_table(conn: &DatabaseConnection) -> Result<()> {
+        conn.query_row(
+            "SELECT id, title, sort, timestamp, pubdate, series_index, author_sort, isbn, lccn, path FROM books LIMIT 1",
+            &[],
+            |_| Ok(()),
+        )
+        .or_else(|_| {
+            Err(CalibreDbError::InvalidData(
+                "books table does not have expected schema".to_string(),
+            ))
+        })
+    }
+
+    pub fn validate_authors_table(conn: &DatabaseConnection) -> Result<()> {
+        conn.query_row(
+            "SELECT id, name, sort FROM authors LIMIT 1",
+            &[],
+            |_| Ok(()),
+        )
+        .or_else(|_| {
+            Err(CalibreDbError::InvalidData(
+                "authors table does not have expected schema".to_string(),
+            ))
+        })
+    }
+
+    pub fn validate_database(conn: &DatabaseConnection) -> Result<()> {
+        Self::validate_books_table(conn)?;
+        Self::validate_authors_table(conn)?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempfile::NamedTempFile;
+
+    fn create_test_db() -> Result<(DatabaseConnection, NamedTempFile)> {
+        let temp_file = NamedTempFile::new().map_err(|e| CalibreDbError::from(e))?;
+        let path = temp_file.path().to_path_buf();
+
+        let conn = Connection::open(&path)?;
+
+        conn.execute(
+            "CREATE TABLE books (
+                id INTEGER PRIMARY KEY,
+                title TEXT NOT NULL,
+                sort TEXT,
+                timestamp TIMESTAMP,
+                pubdate TIMESTAMP,
+                series_index REAL,
+                author_sort TEXT,
+                isbn TEXT,
+                lccn TEXT,
+                path TEXT,
+                has_cover BOOLEAN DEFAULT 0
+            )",
+            [],
+        )?;
+
+        conn.execute(
+            "CREATE TABLE authors (
+                id INTEGER PRIMARY KEY,
+                name TEXT NOT NULL,
+                sort TEXT
+            )",
+            [],
+        )?;
+
+        drop(conn);
+
+        let db_conn = DatabaseConnection::new(&path)?;
+        Ok((db_conn, temp_file))
+    }
+
+    #[test]
+    fn test_database_connection_creation() {
+        let result = create_test_db();
+        assert!(result.is_ok());
+    }
+}

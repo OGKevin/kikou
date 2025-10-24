@@ -1,0 +1,29 @@
+[package]
+name = "calibre_db"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86.0"
+description = "Rust library for interacting with Calibre SQLite databases"
+license = ""
+repository = ""
+
+[dependencies]
+rusqlite = { version = "0.31", features = ["bundled", "chrono"] }
+chrono = { version = "0.4", features = ["serde"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.35", features = ["full"], optional = true }
+futures = { version = "0.3", optional = true }
+
+[dev-dependencies]
+tokio = { version = "1.35", features = ["full"] }
+tempfile = "3.8"
+
+[features]
+default = []
+async = ["tokio", "futures"]
+
+[[test]]
+name = "integration_tests"
+path = "tests/integration_tests.rs"

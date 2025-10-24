@@ -39,6 +39,8 @@
     # D-Bus / desktop integration
     dbus
     xdg-utils
+
+    sqlite
   ];
 
   languages.rust = {
@@ -68,7 +70,7 @@
   scripts.dev-app.exec = "cargo tauri dev";
   scripts.create-test-cbz.exec = "cd src-tauri && cargo run --bin create_test_cbz";
   scripts.create-test-missing-comicinfo.exec = "cd src-tauri && cargo run --bin create_test_missing_comicinfo";
-  scripts.test-app.exec = "jest && cargo test --manifest-path ./src-tauri/Cargo.toml";
+  scripts.test-app.exec = "jest && cargo test --manifest-path ./src-tauri/Cargo.toml && cargo test --manifest-path ./src-tauri/calibre_db/Cargo.toml";
 
   enterShell = ''
     export XDG_DATA_DIRS=${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk3}/share/gsettings-schemas/${pkgs.gtk3.name}:$XDG_DATA_DIRS;
@@ -80,7 +82,7 @@
     pnpm test
     pnpm run build
     cargo test --manifest-path ./src-tauri/Cargo.toml
-    cargo check --manifest-path ./src-tauri/Cargo.toml 
+    cargo check --manifest-path ./src-tauri/Cargo.toml
     cargo build --manifest-path ./src-tauri/Cargo.toml
     nix flake check
     nix eval

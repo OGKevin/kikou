@@ -3,7 +3,7 @@ pub mod info;
 pub mod page;
 pub mod types;
 
-pub use info::{ComicInfo, get_bookmarked_pages};
+pub use info::{get_bookmarked_pages, ComicInfo};
 pub use page::{ComicPageInfo, Pages};
 pub use types::ComicPageType;
 
@@ -112,13 +112,11 @@ A secret double life begins—one he can't tell anyone about!
             Some("AKB49: The Rules Against Love".to_string())
         );
         assert_eq!(comic.number, Some("1.0".to_string()));
-        assert!(
-            comic
-                .summary
-                .as_ref()
-                .unwrap()
-                .contains("A boy joins AKB48")
-        );
+        assert!(comic
+            .summary
+            .as_ref()
+            .unwrap()
+            .contains("A boy joins AKB48"));
         assert_eq!(comic.year, 2010);
         assert_eq!(comic.month, 12);
         assert_eq!(comic.day, 17);

@@ -1,9 +1,9 @@
 use crate::archive::event::{ArchiveEventEmitter, ArchiveEventType};
 
 use log::debug;
-use notify::{RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher, event::Event};
+use notify::{event::Event, RecommendedWatcher, RecursiveMode, Result as NotifyResult, Watcher};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, mpsc};
+use std::sync::{mpsc, Arc};
 use std::thread;
 use std::time::{Duration, Instant};
 
