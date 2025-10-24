@@ -182,27 +182,26 @@ pub fn save_page_settings_impl(
     Ok(())
 }
 
-/// Business logic for saving ComicInfo XML
-pub fn save_comicinfo_xml_impl(path: String, xml: String) -> Result<String, String> {
-    debug!("Saving ComicInfo XML to {} with xml {}", path, xml);
-
-    let mut comic_info: ComicInfo = serde_xml_rs::from_str(&xml).map_err(|e| e.to_string())?;
-    comic_info.validate().map_err(|e| e.to_string())?;
-
-    // Try to preserve filenames by matching with existing ComicInfo
-    let archive = read_archive(&path).map_err(|e| e.to_string())?;
-    if let Some(existing_comic_info) = archive.comic_info {
+/// Restores filenames from existing ComicInfo pages by matching image indices.
+///
+/// When a ComicInfo is being edited, this function attempts to preserve the
+/// filename information by matching pages in the new ComicInfo with those in
+/// the existing ComicInfo based on their image index. This ensures that manual
+/// XML edits do not lose the filename mapping.
+fn restore_filenames_from_existing_pages(
+    comic_info: &mut ComicInfo,
+    archive: &super::types::Archive,
+) {
+    if let Some(existing_comic_info) = &archive.comic_info {
         if let (Some(new_pages), Some(existing_pages)) =
             (&mut comic_info.pages, &existing_comic_info.pages)
         {
-            // Build map of image index to filename from existing pages
             let filename_map: std::collections::HashMap<i32, String> = existing_pages
                 .page
                 .iter()
                 .filter_map(|p| p.filename.as_ref().map(|f| (p.image, f.clone())))
                 .collect();
 
-            // Try to match pages by image index and restore filenames
             for page in &mut new_pages.page {
                 if let Some(filename) = filename_map.get(&page.image) {
                     page.filename = Some(filename.clone());
@@ -210,8 +209,14 @@ pub fn save_comicinfo_xml_impl(path: String, xml: String) -> Result<String, Stri
             }
         }
     }
+}
 
-    // If we couldn't get filenames from existing ComicInfo, try to match with actual files
+/// Populates filenames for pages that don't have them by matching with archive files.
+///
+/// For pages without filenames (typically new pages or pages from external sources),
+/// this function maps them to actual image files in the archive by using the image
+/// index to look up the corresponding file in the sorted list of archive images.
+fn populate_filenames_from_archive(comic_info: &mut ComicInfo, archive: &super::types::Archive) {
     if let Some(ref mut pages) = comic_info.pages {
         let image_files = archive
             .files
@@ -224,7 +229,6 @@ pub fn save_comicinfo_xml_impl(path: String, xml: String) -> Result<String, Stri
         sorted.sort();
 
         for page in &mut pages.page {
-            // Only set filename if not already set
             if page.filename.is_none() {
                 let index = page.image as usize;
                 if let Some(filename) = sorted.get(index) {
@@ -233,6 +237,19 @@ pub fn save_comicinfo_xml_impl(path: String, xml: String) -> Result<String, Stri
             }
         }
     }
+}
+
+/// Business logic for saving ComicInfo XML
+pub fn save_comicinfo_xml_impl(path: String, xml: String) -> Result<String, String> {
+    debug!("Saving ComicInfo XML to {} with xml {}", path, xml);
+
+    let mut comic_info: ComicInfo = serde_xml_rs::from_str(&xml).map_err(|e| e.to_string())?;
+    comic_info.validate().map_err(|e| e.to_string())?;
+
+    let archive = read_archive(&path).map_err(|e| e.to_string())?;
+
+    restore_filenames_from_existing_pages(&mut comic_info, &archive);
+    populate_filenames_from_archive(&mut comic_info, &archive);
 
     let formatted_xml = comic_info.to_xml().map_err(|e| e.to_string())?;
 

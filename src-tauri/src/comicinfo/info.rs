@@ -340,7 +340,51 @@ impl ComicInfo {
         let comic_info: ComicInfo = serde_xml_rs::from_str(xml)?;
         Ok(comic_info)
     }
+}
 
+/// Writes a Page event to the XML writer, optionally preceded by a filename comment.
+///
+/// Extracts the Image attribute from the event, looks up the corresponding filename
+/// in the provided map, and writes a comment before the actual event if found.
+///
+/// # Parameters
+/// * `event` - The XML event representing a Page element
+/// * `page_filenames` - Map of image indices to filenames
+/// * `writer` - The XML writer to output to
+/// * `write_fn` - Function that writes the actual event (handles Empty vs Start variants)
+fn write_page_event_with_filename_comment<'a, W: std::io::Write>(
+    event: &quick_xml::events::BytesStart<'a>,
+    page_filenames: &std::collections::HashMap<i32, String>,
+    writer: &mut Writer<W>,
+    write_fn: impl FnOnce(
+        &mut Writer<W>,
+        quick_xml::events::BytesStart<'a>,
+    ) -> Result<(), quick_xml::Error>,
+) -> Result<(), ComicInfoError> {
+    let image_idx = event
+        .attributes()
+        .filter_map(|a| a.ok())
+        .find(|attr| attr.key.as_ref() == b"Image")
+        .and_then(|attr| {
+            std::str::from_utf8(&attr.value)
+                .ok()
+                .and_then(|s| s.parse::<i32>().ok())
+        });
+
+    if let Some(idx) = image_idx {
+        if let Some(filename) = page_filenames.get(&idx) {
+            let comment = format!(" filename: {} ", filename);
+            writer
+                .write_event(Event::Comment(quick_xml::events::BytesText::new(&comment)))
+                .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+        }
+    }
+
+    write_fn(writer, event.to_owned()).map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+    Ok(())
+}
+
+impl ComicInfo {
     pub fn to_xml(&self) -> Result<String, ComicInfoError> {
         let xml =
             serde_xml_rs::to_string(self).map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
@@ -351,7 +395,6 @@ impl ComicInfo {
         let mut output = Vec::new();
         let mut writer = Writer::new_with_indent(Cursor::new(&mut output), b' ', 2);
 
-        // Build a map of image index to filename from pages
         let page_filenames: std::collections::HashMap<i32, String> = self
             .pages
             .as_ref()
@@ -373,60 +416,20 @@ impl ComicInfo {
                         .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
                 }
                 Ok(Event::Empty(e)) if e.name().as_ref() == b"Page" => {
-                    // Get the image index from the attributes
-                    let image_idx = e
-                        .attributes()
-                        .filter_map(|a| a.ok())
-                        .find(|attr| attr.key.as_ref() == b"Image")
-                        .and_then(|attr| {
-                            std::str::from_utf8(&attr.value)
-                                .ok()
-                                .and_then(|s| s.parse::<i32>().ok())
-                        });
-
-                    // Write comment if we have a filename for this page
-                    if let Some(idx) = image_idx {
-                        if let Some(filename) = page_filenames.get(&idx) {
-                            let comment = format!(" filename: {} ", filename);
-                            writer
-                                .write_event(Event::Comment(quick_xml::events::BytesText::new(
-                                    &comment,
-                                )))
-                                .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
-                        }
-                    }
-
-                    writer
-                        .write_event(Event::Empty(e))
-                        .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+                    write_page_event_with_filename_comment(
+                        &e,
+                        &page_filenames,
+                        &mut writer,
+                        |w, evt| w.write_event(Event::Empty(evt)),
+                    )?;
                 }
                 Ok(Event::Start(e)) if e.name().as_ref() == b"Page" => {
-                    // Get the image index from the attributes
-                    let image_idx = e
-                        .attributes()
-                        .filter_map(|a| a.ok())
-                        .find(|attr| attr.key.as_ref() == b"Image")
-                        .and_then(|attr| {
-                            std::str::from_utf8(&attr.value)
-                                .ok()
-                                .and_then(|s| s.parse::<i32>().ok())
-                        });
-
-                    // Write comment if we have a filename for this page
-                    if let Some(idx) = image_idx {
-                        if let Some(filename) = page_filenames.get(&idx) {
-                            let comment = format!(" filename: {} ", filename);
-                            writer
-                                .write_event(Event::Comment(quick_xml::events::BytesText::new(
-                                    &comment,
-                                )))
-                                .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
-                        }
-                    }
-
-                    writer
-                        .write_event(Event::Start(e))
-                        .map_err(|e| ComicInfoError::ToXml(e.to_string()))?;
+                    write_page_event_with_filename_comment(
+                        &e,
+                        &page_filenames,
+                        &mut writer,
+                        |w, evt| w.write_event(Event::Start(evt)),
+                    )?;
                 }
                 Ok(event) => {
                     writer
