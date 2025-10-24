@@ -345,7 +345,8 @@ impl ComicInfo {
 /// Writes a Page event to the XML writer, optionally preceded by a filename comment.
 ///
 /// Extracts the Image attribute from the event, looks up the corresponding filename
-/// in the provided map, and writes a comment before the actual event if found.
+/// in the provided map, and writes a comment before the actual event only if both the Image attribute exists
+/// and a corresponding filename is found in the map.
 ///
 /// # Parameters
 /// * `event` - The XML event representing a Page element
