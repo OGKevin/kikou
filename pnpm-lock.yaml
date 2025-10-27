@@ -27,8 +27,8 @@ importers:
         specifier: ^2.9.0
         version: 2.9.0
       '@tauri-apps/plugin-dialog':
-        specifier: ^2.4.0
-        version: 2.4.0
+        specifier: ^2.4.2
+        version: 2.4.2
       next:
         specifier: ^15.5.6
         version: 15.5.6(@babel/core@7.28.4)(babel-plugin-macros@3.1.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
@@ -42,8 +42,8 @@ importers:
         specifier: ^3.0.6
         version: 3.0.6(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react-window:
-        specifier: ^2.2.1
-        version: 2.2.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        specifier: ^2.2.2
+        version: 2.2.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.3.1
@@ -981,8 +981,8 @@ packages:
   '@tauri-apps/api@2.9.0':
     resolution: {integrity: sha512-qD5tMjh7utwBk9/5PrTA/aGr3i5QaJ/Mlt7p8NilQ45WgbifUNPyKWsA63iQ8YfQq6R8ajMapU+/Q8nMcPRLNw==}
 
-  '@tauri-apps/plugin-dialog@2.4.0':
-    resolution: {integrity: sha512-OvXkrEBfWwtd8tzVCEXIvRfNEX87qs2jv6SqmVPiHcJjBhSF/GUvjqUNIDmKByb5N8nvDqVUM7+g1sXwdC/S9w==}
+  '@tauri-apps/plugin-dialog@2.4.2':
+    resolution: {integrity: sha512-lNIn5CZuw8WZOn8zHzmFmDSzg5zfohWoa3mdULP0YFh/VogVdMVWZPcWSHlydsiJhRQYaTNSYKN7RmZKE2lCYQ==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -2748,8 +2748,8 @@ packages:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
 
-  react-window@2.2.1:
-    resolution: {integrity: sha512-jrUMKDLW1B4yX4OU0QjdytGgWIg6wqWfiTe86lUhFsCUltkNNB/zYxFU0DTKAzBOMRbkpLVWS1IkLvQeO4L7nw==}
+  react-window@2.2.2:
+    resolution: {integrity: sha512-kvHKwFImKBWNbx2S87NZOhQhAVkBthjmnOfHlhQI45p3A+D+V53E+CqQMsyHrxNe3ke+YtWXuKDa1eoHAaIWJg==}
     peerDependencies:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
@@ -4205,7 +4205,7 @@ snapshots:
 
   '@tauri-apps/api@2.9.0': {}
 
-  '@tauri-apps/plugin-dialog@2.4.0':
+  '@tauri-apps/plugin-dialog@2.4.2':
     dependencies:
       '@tauri-apps/api': 2.9.0
 
@@ -6342,7 +6342,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
 
-  react-window@2.2.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  react-window@2.2.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
     dependencies:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
