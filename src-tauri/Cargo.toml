@@ -37,6 +37,9 @@ tokio = { version = "1.35", features = ["full"] }
 async-trait = "0.1"
 calibre_db = { path = "./calibre_db" }
 
+[dev-dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+
 [[test]]
 name = "app_tests"
 path = "tests/lib_tests.rs"

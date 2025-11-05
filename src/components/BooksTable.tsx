@@ -13,7 +13,7 @@ import {
   Divider,
 } from "@mui/joy";
 import { Book } from "@/types/book";
-import { BookCoverSkeleton } from "./BookCoverSkeleton";
+import { BookCover } from "./BookCover";
 import { ColumnConfig } from "@/hooks/useTableColumns";
 import { devLog } from "@/utils/devLog";
 
@@ -311,7 +311,7 @@ export function BooksTable({
 
   const renderCellContent = (book: Book, columnId: string): React.ReactNode => {
     if (columnId === "cover") {
-      return <BookCoverSkeleton />;
+      return <BookCover bookId={book.id} alt={`Cover for ${book.title}`} />;
     }
 
     const value = getBookFieldValue(book, columnId);

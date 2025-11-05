@@ -4,6 +4,7 @@ import {
   libraryOpen,
   libraryGetAllBooks,
 } from "@/api/library";
+import { useStreamBookCovers } from "./useStreamBookCovers";
 
 const LIBRARY_PATH_KEY = "kikou_library_path";
 
@@ -25,6 +26,13 @@ export function useLibrary(): UseLibraryReturn {
   const [isLibraryOpen, setIsLibraryOpen] = useState(false);
   const autoLoadAttemptedRef = useRef(false);
   const isLibraryOpenRef = useRef(false);
+
+  const bookIds = books.map((book) => book.id);
+
+  useStreamBookCovers({
+    bookIds,
+    enabled: books.length > 0,
+  });
 
   // Keep ref in sync with state
   useEffect(() => {

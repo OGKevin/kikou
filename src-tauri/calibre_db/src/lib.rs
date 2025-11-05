@@ -4,7 +4,7 @@ mod schema;
 mod queries;
 
 pub use error::{CalibreDbError, Result};
-pub use models::{Book, Author, Series, Tag, BookMetadata};
+pub use models::{Book, Author, Series, Tag, Identifier, BookMetadata};
 pub use schema::DatabaseConnection;
 
 use std::path::Path;

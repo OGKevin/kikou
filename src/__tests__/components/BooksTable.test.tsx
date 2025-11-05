@@ -8,15 +8,8 @@ import { renderWithProviders } from "@/test-utils/testUtils";
 const mockBook: Book = {
   id: 1,
   title: "Test Book",
-  sort: "book, test",
-  timestamp: "2024-01-01T00:00:00Z",
   pubdate: "2024-01-01T00:00:00Z",
-  series_index: 1.0,
-  author_sort: "Author, Test",
   isbn: "123-456-789",
-  lccn: "",
-  path: "/test/path",
-  has_cover: true,
   authors: [{ id: 1, name: "Test Author", sort: "Author, Test" }],
   publishers: ["Test Publisher"],
   tags: [
@@ -24,10 +17,8 @@ const mockBook: Book = {
     { id: 2, name: "Adventure" },
   ],
   series: { id: 1, name: "Test Series" },
-  comments: "Test comment",
   rating: 4,
   formats: ["EPUB", "PDF"],
-  identifiers: [{ book_id: 1, kind: "isbn", val: "123-456-789" }],
   languages: ["en", "es"],
 };
 
@@ -271,7 +262,7 @@ describe("BooksTable", () => {
     expect(screen.getByText(mockBookTagsFormatted)).toBeInTheDocument();
   });
 
-  it("renders cover skeleton for cover column", () => {
+  it("renders cover for cover column", () => {
     renderWithProviders(
       <BooksTable
         books={[mockBook]}
@@ -282,6 +273,7 @@ describe("BooksTable", () => {
       />,
     );
 
-    expect(screen.getByTestId("cover-skeleton-1")).toBeInTheDocument();
+    // BookCover component should render (it will show a skeleton initially)
+    expect(screen.getByTestId("book-cover-skeleton")).toBeInTheDocument();
   });
 });

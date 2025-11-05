@@ -28,6 +28,7 @@ pub fn run() {
             library::commands::library_get_all_books,
             library::commands::library_get_book,
             library::commands::library_get_book_count,
+            library::commands::library_stream_book_covers,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {

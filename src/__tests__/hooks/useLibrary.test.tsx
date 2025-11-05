@@ -1,6 +1,8 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useLibrary } from "@/hooks/useLibrary";
 import * as libraryApi from "@/api/library";
+import React from "react";
+import { BookCoverProvider } from "@/contexts/BookCoverContext";
 
 jest.mock("@/api/library");
 
@@ -8,48 +10,34 @@ const mockBooks = [
   {
     id: 1,
     title: "Test Book 1",
-    sort: "book, test",
-    timestamp: "2024-01-01T00:00:00Z",
     pubdate: "2024-01-01T00:00:00Z",
-    series_index: 1.0,
-    author_sort: "Author, Test",
     isbn: "123-456",
-    lccn: "",
-    path: "/test/path1",
-    has_cover: true,
     authors: [{ id: 1, name: "Test Author", sort: "Author, Test" }],
     publishers: ["Test Publisher"],
     tags: [],
     series: null,
-    comments: null,
     rating: null,
     formats: [],
-    identifiers: [],
     languages: [],
   },
   {
     id: 2,
     title: "Test Book 2",
-    sort: "book, test",
-    timestamp: "2024-01-02T00:00:00Z",
     pubdate: "2024-01-02T00:00:00Z",
-    series_index: 1.0,
-    author_sort: "Author, Test",
     isbn: "789-012",
-    lccn: "",
-    path: "/test/path2",
-    has_cover: false,
     authors: [],
     publishers: [],
     tags: [],
     series: null,
-    comments: null,
     rating: null,
     formats: [],
-    identifiers: [],
     languages: [],
   },
 ];
+
+const wrapper = ({ children }: { children: React.ReactNode }) => (
+  <BookCoverProvider>{children}</BookCoverProvider>
+);
 
 describe("useLibrary", () => {
   beforeEach(() => {
@@ -65,7 +53,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     expect(result.current.books).toEqual([]);
     expect(result.current.isLoading).toBe(false);
@@ -78,7 +66,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -93,7 +81,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -110,7 +98,7 @@ describe("useLibrary", () => {
     );
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/invalid/path");
@@ -124,7 +112,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -144,7 +132,7 @@ describe("useLibrary", () => {
         new Promise((resolve) => setTimeout(() => resolve(mockBooks), 50))
     );
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -165,7 +153,7 @@ describe("useLibrary", () => {
       new Error(errorMessage)
     );
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -187,7 +175,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     // Clear the mock after rendering to account for any auto-load effects
     (libraryApi.libraryGetAllBooks as jest.Mock).mockClear();
@@ -206,7 +194,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
     localStorage.setItem("kikou_library_path", "/saved/path");
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.libraryPath).toBe("/saved/path");
@@ -219,7 +207,7 @@ describe("useLibrary", () => {
       .mockResolvedValueOnce(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/path1");
@@ -239,7 +227,7 @@ describe("useLibrary", () => {
       "String error message"
     );
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -252,7 +240,7 @@ describe("useLibrary", () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-    const { result } = renderHook(() => useLibrary());
+    const { result } = renderHook(() => useLibrary(), { wrapper });
 
     await act(async () => {
       await result.current.openLibrary("/test/path");
@@ -277,7 +265,7 @@ describe("useLibrary", () => {
       (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
       (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-      const { result } = renderHook(() => useLibrary());
+      const { result } = renderHook(() => useLibrary(), { wrapper });
 
       await act(async () => {
         await result.current.openLibrary("/test/path");
@@ -298,7 +286,7 @@ describe("useLibrary", () => {
       (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
       (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-      const { result } = renderHook(() => useLibrary());
+      const { result } = renderHook(() => useLibrary(), { wrapper });
 
       // Simulate opening with an explicit call (not auto-load)
       await act(async () => {
@@ -326,7 +314,7 @@ describe("useLibrary", () => {
       // Set saved path before rendering hook
       localStorage.setItem("kikou_library_path", "/saved/path");
 
-      const { result } = renderHook(() => useLibrary());
+      const { result } = renderHook(() => useLibrary(), { wrapper });
 
       // Wait for path to be loaded from localStorage
       await waitFor(() => {
@@ -354,7 +342,7 @@ describe("useLibrary", () => {
       (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
       (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-      const { result } = renderHook(() => useLibrary());
+      const { result } = renderHook(() => useLibrary(), { wrapper });
 
       await act(async () => {
         await result.current.openLibrary("/test/path");
@@ -379,7 +367,7 @@ describe("useLibrary", () => {
       (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
       (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue(mockBooks);
 
-      const { result } = renderHook(() => useLibrary());
+      const { result } = renderHook(() => useLibrary(), { wrapper });
 
       expect(result.current.isLoading).toBe(false);
 

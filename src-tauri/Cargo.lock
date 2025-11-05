@@ -14,6 +14,7 @@ dependencies = [
  "once_cell",
  "quick-xml 0.31.0",
  "rayon",
+ "rusqlite",
  "serde",
  "serde-xml-rs",
  "serde_json",

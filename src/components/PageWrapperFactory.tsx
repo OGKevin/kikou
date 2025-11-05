@@ -3,6 +3,7 @@ import { Box } from "@mui/joy";
 import { NavigationProvider } from "@/contexts/NavigationContext";
 import NavigationDialogManager from "@/components/ui/NavigationDialogManager";
 import { ArchiveProvider } from "@/contexts/ArchiveContext";
+import { BookCoverProvider } from "@/contexts/BookCoverContext";
 import ArchiveValidator from "@/components/file/ArchiveValidator";
 import Navigation from "./ui/Navigation";
 
@@ -40,18 +41,20 @@ export function getPageWrapper({
 
   return (
     <NavigationProvider>
-      <NavigationDialogManager />
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          height: "100vh",
-          overflow: "hidden",
-        }}
-      >
-        <Navigation />
-        <Box sx={{ flex: 1, overflow: "hidden" }}>{wrappedContent}</Box>
-      </Box>
+      <BookCoverProvider>
+        <NavigationDialogManager />
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            height: "100vh",
+            overflow: "hidden",
+          }}
+        >
+          <Navigation />
+          <Box sx={{ flex: 1, overflow: "hidden" }}>{wrappedContent}</Box>
+        </Box>
+      </BookCoverProvider>
     </NavigationProvider>
   );
 }

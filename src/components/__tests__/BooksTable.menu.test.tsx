@@ -1,28 +1,20 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { screen, fireEvent, waitFor } from "@testing-library/react";
 import { BooksTable } from "../BooksTable";
 import { Book } from "@/types/book";
+import { renderWithProviders } from "@/test-utils/testUtils";
 
 const mockBooks: Book[] = [
   {
     id: 1,
     title: "Test Book",
-    sort: "Book, Test",
-    timestamp: "2024-01-01T00:00:00Z",
-    pubdate: "2024-01-01",
-    series_index: 0,
-    author_sort: "Author, Test",
+    pubdate: "2024-01-01T00:00:00Z",
+    isbn: "1234567890",
     authors: [{ id: 1, name: "Test Author", sort: "Author, Test" }],
     publishers: ["Test Publisher"],
     tags: [{ id: 1, name: "Fiction" }],
-    isbn: "1234567890",
-    lccn: "",
-    path: "test/path",
-    has_cover: false,
-    comments: null,
-    rating: 5,
     series: null,
+    rating: 5,
     formats: ["EPUB"],
-    identifiers: [],
     languages: ["en"],
   },
 ];
@@ -40,7 +32,7 @@ describe("BooksTable - Column Menu", () => {
     const mockToggle = jest.fn();
     const mockReset = jest.fn();
 
-    render(
+    renderWithProviders(
       <BooksTable
         books={mockBooks}
         columns={mockColumns}
@@ -63,7 +55,7 @@ describe("BooksTable - Column Menu", () => {
     const mockToggle = jest.fn();
     const mockReset = jest.fn();
 
-    render(
+    renderWithProviders(
       <BooksTable
         books={mockBooks}
         columns={mockColumns}
@@ -92,7 +84,7 @@ describe("BooksTable - Column Menu", () => {
     const mockToggle = jest.fn();
     const mockReset = jest.fn();
 
-    render(
+    renderWithProviders(
       <BooksTable
         books={mockBooks}
         columns={mockColumns}
