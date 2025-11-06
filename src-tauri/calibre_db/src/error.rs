@@ -42,3 +42,20 @@ impl From<serde_json::Error> for CalibreDbError {
 }
 
 pub type Result<T> = std::result::Result<T, CalibreDbError>;
+
+/// Extension trait to convert `QueryReturnedNoRows` errors into `Ok(None)`.
+/// This is useful for queries that may or may not return a row.
+pub trait OptionalResult<T> {
+    /// Converts a database query result to an `Option`, treating `QueryReturnedNoRows` as `None`.
+    fn optional(self) -> Result<Option<T>>;
+}
+
+impl<T> OptionalResult<T> for Result<T> {
+    fn optional(self) -> Result<Option<T>> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(CalibreDbError::DatabaseError(rusqlite::Error::QueryReturnedNoRows)) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}

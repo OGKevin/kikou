@@ -27,41 +27,23 @@ pub struct Book {
 }
 
 impl Book {
-    /// Creates a new book builder with the given ID, title, and path.
+    /// Creates a new book builder with the given ID, title, path, and database reference.
     ///
-    /// Returns `BookBuilder<'static>` to allow building without a database reference.
-    /// The builder can later be configured with a database via `with_db()` to enable
-    /// automatic relation fetching during `build()`.
+    /// The database is required to enable automatic relation fetching during `build()`.
+    /// The builder's lifetime is tied to the database reference, ensuring type-safe access.
     ///
     /// # Examples
     ///
-    /// Building without a database (no relation fetching):
-    /// ```
+    /// ```ignore
     /// use calibre_db::Book;
-    /// let book = Book::builder(1, "Title".into(), "/path".into())
+    /// let book = Book::builder(1, "Title".into(), "/path".into(), &db)
     ///     .sort("book, title".into())
-    ///     .build()
-    ///     .unwrap();
+    ///     .fetch_all()
+    ///     .build()?;
     /// assert_eq!(book.id, 1);
     /// assert_eq!(book.title, "Title");
     /// ```
-    ///
-    /// Building with a database to enable relation fetching:
-    /// ```ignore
-    /// use calibre_db::Book;
-    /// let book = Book::builder(1, "Title".into(), "/path".into())
-    ///     .with_db(&db)
-    ///     .fetch_all()
-    ///     .build()?;
-    /// ```
-    ///
-    /// # Lifetime Design
-    /// The function returns `BookBuilder<'static>` instead of `BookBuilder<'a>` because
-    /// initially the builder has no database reference (db is `None`). When `with_db()`
-    /// is called later, the lifetime constraint becomes bound to the database reference's
-    /// lifetime. This design allows building complete books without a database while still
-    /// supporting optional database-aware relation fetching.
-    pub fn builder(id: u32, title: String, path: String) -> BookBuilder<'static> {
+    pub fn builder(id: u32, title: String, path: String, db: &dyn ReadOnlyDatabase) -> BookBuilder {
         BookBuilder {
             id,
             title,
@@ -92,7 +74,7 @@ impl Book {
             fetch_formats: false,
             fetch_identifiers: false,
             fetch_languages: false,
-            db: None,
+            db,
         }
     }
 }
@@ -127,10 +109,10 @@ pub struct BookBuilder<'a> {
     fetch_formats: bool,
     fetch_identifiers: bool,
     fetch_languages: bool,
-    db: Option<&'a dyn ReadOnlyDatabase>,
+    db: &'a dyn ReadOnlyDatabase,
 }
 
-impl<'a> BookBuilder<'a> {
+impl BookBuilder<'_> {
     pub fn sort(mut self, sort: String) -> Self {
         self.sort = sort;
         self
@@ -216,11 +198,6 @@ impl<'a> BookBuilder<'a> {
         self
     }
 
-    pub fn with_db(mut self, db: &'a dyn ReadOnlyDatabase) -> Self {
-        self.db = Some(db);
-        self
-    }
-
     pub fn fetch_authors(mut self, fetch: bool) -> Self {
         self.fetch_authors = fetch;
         self
@@ -280,51 +257,51 @@ impl<'a> BookBuilder<'a> {
     }
 
     pub fn build(mut self) -> crate::error::Result<Book> {
-        if let Some(db) = self.db {
-            // Sequential queries are used here instead of a single complex JOIN.
-            // This implements a pragmatic trade-off between performance and maintainability.
-            //
-            // Why sequential queries instead of a single complex JOIN?
-            //
-            // 1. **Cartesian Product Complexity**: Multiple many-to-many JOINs create a cartesian
-            //    product that requires complex aggregation logic to deduplicate results.
-            // 2. **Maintainability**: Sequential targeted queries are simpler to understand and debug.
-            // 3. **Performance**: In practice, sequential queries perform well due to SQLite's
-            //    query optimization and caching. The number of queries is fixed (at most 9),
-            //    not dependent on result set size.
-            //
-            // When to Consider a Single Query Approach:
-            // If performance profiling shows N+1 query overhead is significant, consider:
-            // - Using UNION queries to avoid cartesian products
-            // - Building a smarter aggregation layer
-            // - Caching frequently accessed relations
-            if self.fetch_authors {
-                self.authors = db.fetch_book_authors(self.id)?;
-            }
-            if self.fetch_publishers {
-                self.publishers = db.fetch_book_publishers(self.id)?;
-            }
-            if self.fetch_tags {
-                self.tags = db.fetch_book_tags(self.id)?;
-            }
-            if self.fetch_series {
-                self.series = db.fetch_book_series(self.id)?;
-            }
-            if self.fetch_comments {
-                self.comments = db.fetch_book_comments(self.id)?;
-            }
-            if self.fetch_rating {
-                self.rating = db.fetch_book_rating(self.id)?;
-            }
-            if self.fetch_formats {
-                self.formats = db.fetch_book_formats(self.id)?;
-            }
-            if self.fetch_identifiers {
-                self.identifiers = db.fetch_book_identifiers(self.id)?;
-            }
-            if self.fetch_languages {
-                self.languages = db.fetch_book_languages(self.id)?;
-            }
+        let db = self.db;
+
+        // Sequential queries are used here instead of a single complex JOIN.
+        // This implements a pragmatic trade-off between performance and maintainability.
+        //
+        // Why sequential queries instead of a single complex JOIN?
+        //
+        // 1. **Cartesian Product Complexity**: Multiple many-to-many JOINs create a cartesian
+        //    product that requires complex aggregation logic to deduplicate results.
+        // 2. **Maintainability**: Sequential targeted queries are simpler to understand and debug.
+        // 3. **Performance**: In practice, sequential queries perform well due to SQLite's
+        //    query optimization and caching. The number of queries is fixed (at most 9),
+        //    not dependent on result set size.
+        //
+        // When to Consider a Single Query Approach:
+        // If performance profiling shows N+1 query overhead is significant, consider:
+        // - Using UNION queries to avoid cartesian products
+        // - Building a smarter aggregation layer
+        // - Caching frequently accessed relations
+        if self.fetch_authors {
+            self.authors = db.fetch_book_authors(self.id)?;
+        }
+        if self.fetch_publishers {
+            self.publishers = db.fetch_book_publishers(self.id)?;
+        }
+        if self.fetch_tags {
+            self.tags = db.fetch_book_tags(self.id)?;
+        }
+        if self.fetch_series {
+            self.series = db.fetch_book_series(self.id)?;
+        }
+        if self.fetch_comments {
+            self.comments = db.fetch_book_comments(self.id)?;
+        }
+        if self.fetch_rating {
+            self.rating = db.fetch_book_rating(self.id)?;
+        }
+        if self.fetch_formats {
+            self.formats = db.fetch_book_formats(self.id)?;
+        }
+        if self.fetch_identifiers {
+            self.identifiers = db.fetch_book_identifiers(self.id)?;
+        }
+        if self.fetch_languages {
+            self.languages = db.fetch_book_languages(self.id)?;
         }
 
         Ok(Book {
@@ -458,9 +435,51 @@ impl BookMetadata {
 mod tests {
     use super::*;
 
+    struct MockDatabase;
+
+    impl ReadOnlyDatabase for MockDatabase {
+        fn get_book(&self, _book_id: u32) -> crate::Result<Book> {
+            unimplemented!()
+        }
+        fn all_books(&self) -> crate::Result<Vec<Book>> {
+            unimplemented!()
+        }
+        fn list_books(&self) -> crate::Result<Vec<Book>> {
+            unimplemented!()
+        }
+        fn fetch_book_authors(&self, _book_id: u32) -> crate::Result<Vec<Author>> {
+            Ok(Vec::new())
+        }
+        fn fetch_book_publishers(&self, _book_id: u32) -> crate::Result<Vec<String>> {
+            Ok(Vec::new())
+        }
+        fn fetch_book_tags(&self, _book_id: u32) -> crate::Result<Vec<Tag>> {
+            Ok(Vec::new())
+        }
+        fn fetch_book_series(&self, _book_id: u32) -> crate::Result<Option<Series>> {
+            Ok(None)
+        }
+        fn fetch_book_comments(&self, _book_id: u32) -> crate::Result<Option<String>> {
+            Ok(None)
+        }
+        fn fetch_book_rating(&self, _book_id: u32) -> crate::Result<Option<u8>> {
+            Ok(None)
+        }
+        fn fetch_book_formats(&self, _book_id: u32) -> crate::Result<Vec<String>> {
+            Ok(Vec::new())
+        }
+        fn fetch_book_identifiers(&self, _book_id: u32) -> crate::Result<Vec<Identifier>> {
+            Ok(Vec::new())
+        }
+        fn fetch_book_languages(&self, _book_id: u32) -> crate::Result<Vec<String>> {
+            Ok(Vec::new())
+        }
+    }
+
     #[test]
     fn test_book_creation() {
-        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string())
+        let db = MockDatabase;
+        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string(), &db)
             .sort("book, test".to_string())
             .has_cover(true)
             .build()
@@ -474,6 +493,7 @@ mod tests {
 
     #[test]
     fn test_book_builder_chain() {
+        let db = MockDatabase;
         let authors = vec![Author::new(
             1,
             "Test Author".to_string(),
@@ -481,7 +501,7 @@ mod tests {
         )];
         let tags = vec![Tag::new(1, "Fiction".to_string())];
 
-        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string())
+        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string(), &db)
             .sort("book, test".to_string())
             .authors(authors)
             .tags(tags)
@@ -522,6 +542,7 @@ mod tests {
 
     #[test]
     fn test_book_metadata_from_book() {
+        let db = MockDatabase;
         let authors = vec![Author::new(
             1,
             "Test Author".to_string(),
@@ -530,7 +551,7 @@ mod tests {
         let tags = vec![Tag::new(1, "Fiction".to_string())];
         let series = Some(Series::new(1, "Test Series".to_string()));
 
-        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string())
+        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string(), &db)
             .sort("book, test".to_string())
             .series_index(1.5)
             .isbn("123-456-789".to_string())

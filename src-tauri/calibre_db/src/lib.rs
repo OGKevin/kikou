@@ -2,7 +2,7 @@ mod error;
 mod models;
 mod schema;
 
-pub use error::{CalibreDbError, Result};
+pub use error::{CalibreDbError, OptionalResult, Result};
 pub use models::{Author, Book, BookMetadata, Identifier, Series, Tag};
 pub use schema::DatabaseConnection;
 
@@ -42,27 +42,26 @@ pub struct CalibreDatabase {
 
 impl ReadOnlyDatabase for CalibreDatabase {
     fn get_book(&self, book_id: u32) -> Result<Book> {
-        let book_builder = self.conn.query_row(
+        let (id, title, sort, timestamp_str, pubdate_str, series_index, author_sort, isbn, lccn, path, has_cover): (u32, String, String, String, String, f32, String, String, String, String, i32) = self.conn.query_row(
             "SELECT id, title, sort, timestamp, pubdate, series_index, author_sort, isbn, lccn, path, has_cover
              FROM books WHERE id = ?1",
             params![book_id],
             |row| {
-                let timestamp_str: String = row.get(3)?;
-                let pubdate_str: String = row.get(4)?;
-
-                Ok(Book::builder(row.get(0)?, row.get(1)?, row.get(9)?)
-                    .sort(row.get(2)?)
-                    .timestamp(parse_timestamp(&timestamp_str))
-                    .pubdate(parse_timestamp(&pubdate_str))
-                    .series_index(row.get(5)?)
-                    .author_sort(row.get(6)?)
-                    .isbn(row.get(7)?)
-                    .lccn(row.get(8)?)
-                    .has_cover(row.get::<_, i32>(10)? != 0))
+                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?, row.get(8)?, row.get(9)?, row.get(10)?))
             },
         )?;
 
-        book_builder.with_db(self).fetch_all().build()
+        Book::builder(id, title, path, self)
+            .sort(sort)
+            .timestamp(parse_timestamp(&timestamp_str))
+            .pubdate(parse_timestamp(&pubdate_str))
+            .series_index(series_index)
+            .author_sort(author_sort)
+            .isbn(isbn)
+            .lccn(lccn)
+            .has_cover(has_cover != 0)
+            .fetch_all()
+            .build()
     }
 
     fn all_books(&self) -> Result<Vec<Book>> {
@@ -75,15 +74,19 @@ impl ReadOnlyDatabase for CalibreDatabase {
                 let timestamp_str: String = row.get(3)?;
                 let pubdate_str: String = row.get(4)?;
 
-                Ok(Book::builder(row.get(0)?, row.get(1)?, row.get(9)?)
-                    .sort(row.get(2)?)
-                    .timestamp(parse_timestamp(&timestamp_str))
-                    .pubdate(parse_timestamp(&pubdate_str))
-                    .series_index(row.get(5)?)
-                    .author_sort(row.get(6)?)
-                    .isbn(row.get(7)?)
-                    .lccn(row.get(8)?)
-                    .has_cover(row.get::<_, i32>(10)? != 0))
+                Ok((
+                    row.get::<_, u32>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    timestamp_str,
+                    pubdate_str,
+                    row.get::<_, f32>(5)?,
+                    row.get::<_, String>(6)?,
+                    row.get::<_, String>(7)?,
+                    row.get::<_, String>(8)?,
+                    row.get::<_, String>(9)?,
+                    row.get::<_, i32>(10)?,
+                ))
             })
             .map_err(CalibreDbError::from)?
             .collect::<std::result::Result<Vec<_>, _>>()
@@ -91,7 +94,33 @@ impl ReadOnlyDatabase for CalibreDatabase {
 
         let enriched_books = books
             .into_iter()
-            .map(|book_builder| book_builder.with_db(self).fetch_all().build())
+            .map(
+                |(
+                    id,
+                    title,
+                    sort,
+                    timestamp_str,
+                    pubdate_str,
+                    series_index,
+                    author_sort,
+                    isbn,
+                    lccn,
+                    path,
+                    has_cover,
+                )| {
+                    Book::builder(id, title, path, self)
+                        .sort(sort)
+                        .timestamp(parse_timestamp(&timestamp_str))
+                        .pubdate(parse_timestamp(&pubdate_str))
+                        .series_index(series_index)
+                        .author_sort(author_sort)
+                        .isbn(isbn)
+                        .lccn(lccn)
+                        .has_cover(has_cover != 0)
+                        .fetch_all()
+                        .build()
+                },
+            )
             .collect::<Result<Vec<_>>>()?;
 
         Ok(enriched_books)
@@ -158,54 +187,42 @@ impl ReadOnlyDatabase for CalibreDatabase {
     }
 
     fn fetch_book_series(&self, book_id: u32) -> Result<Option<Series>> {
-        let result = self.conn.query_row(
-            "SELECT s.id, s.name
-             FROM series s
-             JOIN books_series_link bsl ON s.id = bsl.series
-             WHERE bsl.book = ?1",
-            params![book_id],
-            |row| Ok(Series::new(row.get(0)?, row.get(1)?)),
-        );
-
-        match result {
-            Ok(series) => Ok(Some(series)),
-            Err(CalibreDbError::DatabaseError(rusqlite::Error::QueryReturnedNoRows)) => Ok(None),
-            Err(e) => Err(e),
-        }
+        self.conn
+            .query_row(
+                "SELECT s.id, s.name
+                 FROM series s
+                 JOIN books_series_link bsl ON s.id = bsl.series
+                 WHERE bsl.book = ?1",
+                params![book_id],
+                |row| Ok(Series::new(row.get(0)?, row.get(1)?)),
+            )
+            .optional()
     }
 
     fn fetch_book_comments(&self, book_id: u32) -> Result<Option<String>> {
-        let result = self.conn.query_row(
-            "SELECT text FROM comments WHERE book = ?1",
-            params![book_id],
-            |row| row.get(0),
-        );
-
-        match result {
-            Ok(text) => Ok(Some(text)),
-            Err(CalibreDbError::DatabaseError(rusqlite::Error::QueryReturnedNoRows)) => Ok(None),
-            Err(e) => Err(e),
-        }
+        self.conn
+            .query_row(
+                "SELECT text FROM comments WHERE book = ?1",
+                params![book_id],
+                |row| row.get(0),
+            )
+            .optional()
     }
 
     fn fetch_book_rating(&self, book_id: u32) -> Result<Option<u8>> {
-        let result = self.conn.query_row(
-            "SELECT r.rating
-             FROM ratings r
-             JOIN books_ratings_link brl ON r.id = brl.rating
-             WHERE brl.book = ?1",
-            params![book_id],
-            |row| {
-                let rating: u32 = row.get(0)?;
-                Ok((rating / 2) as u8)
-            },
-        );
-
-        match result {
-            Ok(rating) => Ok(Some(rating)),
-            Err(CalibreDbError::DatabaseError(rusqlite::Error::QueryReturnedNoRows)) => Ok(None),
-            Err(e) => Err(e),
-        }
+        self.conn
+            .query_row(
+                "SELECT r.rating
+                 FROM ratings r
+                 JOIN books_ratings_link brl ON r.id = brl.rating
+                 WHERE brl.book = ?1",
+                params![book_id],
+                |row| {
+                    let rating: u32 = row.get(0)?;
+                    Ok((rating / 2) as u8)
+                },
+            )
+            .optional()
     }
 
     fn fetch_book_formats(&self, book_id: u32) -> Result<Vec<String>> {
