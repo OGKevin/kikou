@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use calibre_db::CalibreDatabase;
+use calibre_db::{CalibreDatabase, ReadOnlyDatabase};
 use std::path::PathBuf;
 use std::sync::Arc;
 

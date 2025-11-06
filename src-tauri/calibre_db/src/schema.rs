@@ -17,9 +17,7 @@ impl DatabaseConnection {
     where
         F: FnOnce(&rusqlite::Row) -> rusqlite::Result<T>,
     {
-        self.conn
-            .query_row(query, params, f)
-            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+        self.conn.query_row(query, params, f).map_err(Into::into)
     }
 
     pub fn prepare<'a>(&'a self, query: &str) -> Result<rusqlite::Statement<'a>> {
@@ -47,9 +45,7 @@ impl DatabaseConnection {
                 )));
             }
         }
-        self.conn
-            .prepare(query)
-            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+        self.conn.prepare(query).map_err(Into::into)
     }
 }
 
@@ -165,8 +161,58 @@ mod tests {
 
         // query_row should work with SELECT (it doesn't go through prepare, so no validation)
         let result: Result<i32> =
-            db_conn.query_row("SELECT COUNT(*) FROM books", &[], |row| Ok(row.get(0)?));
+            db_conn.query_row("SELECT COUNT(*) FROM books", &[], |row| row.get(0));
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 0);
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    fn test_write_operations_rejected_in_debug() {
+        let (db_conn, _temp_file) = create_test_db().unwrap();
+
+        let write_operations = vec![
+            ("INSERT", "INSERT INTO books (title) VALUES ('test')"),
+            ("UPDATE", "UPDATE books SET title = 'test'"),
+            ("DELETE", "DELETE FROM books"),
+            ("CREATE", "CREATE TABLE test (id INT)"),
+            ("DROP", "DROP TABLE books"),
+            ("ALTER", "ALTER TABLE books ADD COLUMN new_col TEXT"),
+        ];
+
+        for (op_type, query) in write_operations {
+            let result = db_conn.prepare(query);
+            assert!(result.is_err(), "{} operation should be rejected", op_type);
+
+            if let Err(CalibreDbError::InvalidData(msg)) = result {
+                assert!(
+                    msg.contains("Only SELECT queries are allowed"),
+                    "Error message should mention read-only restriction for {} operation",
+                    op_type
+                );
+            } else {
+                panic!("{} operation should return InvalidData error", op_type);
+            }
+        }
+    }
+
+    #[test]
+    fn test_valid_select_variants() {
+        let (db_conn, _temp_file) = create_test_db().unwrap();
+
+        let valid_selects = vec![
+            "SELECT * FROM books",
+            "SELECT id, title FROM books WHERE id = 1",
+            "  SELECT * FROM authors",
+            "select count(*) from books",
+            "SELECT DISTINCT title FROM books",
+            "WITH cte AS (SELECT 1) SELECT * FROM cte",
+            "WITH RECURSIVE cte AS (SELECT 1) SELECT * FROM cte",
+        ];
+
+        for query in valid_selects {
+            let result = db_conn.prepare(query);
+            assert!(result.is_ok(), "SELECT query should succeed: {}", query);
+        }
     }
 }

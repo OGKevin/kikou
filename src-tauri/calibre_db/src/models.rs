@@ -1,3 +1,4 @@
+use crate::ReadOnlyDatabase;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
@@ -126,7 +127,7 @@ pub struct BookBuilder<'a> {
     fetch_formats: bool,
     fetch_identifiers: bool,
     fetch_languages: bool,
-    db: Option<&'a crate::schema::DatabaseConnection>,
+    db: Option<&'a dyn ReadOnlyDatabase>,
 }
 
 impl<'a> BookBuilder<'a> {
@@ -215,7 +216,7 @@ impl<'a> BookBuilder<'a> {
         self
     }
 
-    pub fn with_db(mut self, db: &'a crate::schema::DatabaseConnection) -> Self {
+    pub fn with_db(mut self, db: &'a dyn ReadOnlyDatabase) -> Self {
         self.db = Some(db);
         self
     }
@@ -281,31 +282,31 @@ impl<'a> BookBuilder<'a> {
     pub fn build(mut self) -> crate::error::Result<Book> {
         if let Some(db) = self.db {
             if self.fetch_authors {
-                self.authors = crate::queries::fetch_book_authors(db, self.id)?;
+                self.authors = db.fetch_book_authors(self.id)?;
             }
             if self.fetch_publishers {
-                self.publishers = crate::queries::fetch_book_publishers(db, self.id)?;
+                self.publishers = db.fetch_book_publishers(self.id)?;
             }
             if self.fetch_tags {
-                self.tags = crate::queries::fetch_book_tags(db, self.id)?;
+                self.tags = db.fetch_book_tags(self.id)?;
             }
             if self.fetch_series {
-                self.series = crate::queries::fetch_book_series(db, self.id)?;
+                self.series = db.fetch_book_series(self.id)?;
             }
             if self.fetch_comments {
-                self.comments = crate::queries::fetch_book_comments(db, self.id)?;
+                self.comments = db.fetch_book_comments(self.id)?;
             }
             if self.fetch_rating {
-                self.rating = crate::queries::fetch_book_rating(db, self.id)?;
+                self.rating = db.fetch_book_rating(self.id)?;
             }
             if self.fetch_formats {
-                self.formats = crate::queries::fetch_book_formats(db, self.id)?;
+                self.formats = db.fetch_book_formats(self.id)?;
             }
             if self.fetch_identifiers {
-                self.identifiers = crate::queries::fetch_book_identifiers(db, self.id)?;
+                self.identifiers = db.fetch_book_identifiers(self.id)?;
             }
             if self.fetch_languages {
-                self.languages = crate::queries::fetch_book_languages(db, self.id)?;
+                self.languages = db.fetch_book_languages(self.id)?;
             }
         }
 

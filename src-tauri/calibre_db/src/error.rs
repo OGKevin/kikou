@@ -2,7 +2,7 @@ use std::fmt;
 
 #[derive(Debug)]
 pub enum CalibreDbError {
-    DatabaseError(String),
+    DatabaseError(rusqlite::Error),
     NotFound(String),
     InvalidData(String),
     IoError(String),
@@ -12,7 +12,7 @@ pub enum CalibreDbError {
 impl fmt::Display for CalibreDbError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CalibreDbError::DatabaseError(msg) => write!(f, "Database error: {}", msg),
+            CalibreDbError::DatabaseError(err) => write!(f, "Database error: {}", err),
             CalibreDbError::NotFound(msg) => write!(f, "Not found: {}", msg),
             CalibreDbError::InvalidData(msg) => write!(f, "Invalid data: {}", msg),
             CalibreDbError::IoError(msg) => write!(f, "IO error: {}", msg),
@@ -25,7 +25,7 @@ impl std::error::Error for CalibreDbError {}
 
 impl From<rusqlite::Error> for CalibreDbError {
     fn from(err: rusqlite::Error) -> Self {
-        CalibreDbError::DatabaseError(err.to_string())
+        CalibreDbError::DatabaseError(err)
     }
 }
 
