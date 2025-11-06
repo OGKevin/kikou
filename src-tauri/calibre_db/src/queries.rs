@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use rusqlite::params;
 
 pub fn get_book(conn: &DatabaseConnection, book_id: u32) -> Result<Book> {
-    let mut book = conn.query_row(
+    let book_builder = conn.query_row(
         "SELECT id, title, sort, timestamp, pubdate, series_index, author_sort, isbn, lccn, path, has_cover
          FROM books WHERE id = ?1",
         params![book_id],
@@ -13,34 +13,19 @@ pub fn get_book(conn: &DatabaseConnection, book_id: u32) -> Result<Book> {
             let timestamp_str: String = row.get(3)?;
             let pubdate_str: String = row.get(4)?;
 
-            Ok(Book::new(
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                parse_timestamp(&timestamp_str),
-                parse_timestamp(&pubdate_str),
-                row.get(5)?,
-                row.get(6)?,
-                row.get(7)?,
-                row.get(8)?,
-                row.get(9)?,
-                row.get::<_, i32>(10)? != 0,
-            ))
+            Ok(Book::builder(row.get(0)?, row.get(1)?, row.get(9)?)
+                .sort(row.get(2)?)
+                .timestamp(parse_timestamp(&timestamp_str))
+                .pubdate(parse_timestamp(&pubdate_str))
+                .series_index(row.get(5)?)
+                .author_sort(row.get(6)?)
+                .isbn(row.get(7)?)
+                .lccn(row.get(8)?)
+                .has_cover(row.get::<_, i32>(10)? != 0))
         },
     )?;
 
-    let bid = book.id;
-    book = book.with_authors(get_book_authors(conn, bid)?);
-    book = book.with_publishers(get_book_publishers(conn, bid)?);
-    book = book.with_tags(get_book_tags(conn, bid)?);
-    book = book.with_series(get_book_series(conn, bid)?);
-    book = book.with_comments(get_book_comments(conn, bid)?);
-    book = book.with_rating(get_book_rating(conn, bid)?);
-    book = book.with_formats(get_book_formats(conn, bid)?);
-    book = book.with_identifiers(get_book_identifiers(conn, bid)?);
-    book = book.with_languages(get_book_languages(conn, bid)?);
-
-    Ok(book)
+    book_builder.with_db(conn).fetch_all().build()
 }
 
 pub fn all_books(conn: &DatabaseConnection) -> Result<Vec<Book>> {
@@ -53,46 +38,29 @@ pub fn all_books(conn: &DatabaseConnection) -> Result<Vec<Book>> {
             let timestamp_str: String = row.get(3)?;
             let pubdate_str: String = row.get(4)?;
 
-            Ok(Book::new(
-                row.get(0)?,
-                row.get(1)?,
-                row.get(2)?,
-                parse_timestamp(&timestamp_str),
-                parse_timestamp(&pubdate_str),
-                row.get(5)?,
-                row.get(6)?,
-                row.get(7)?,
-                row.get(8)?,
-                row.get(9)?,
-                row.get::<_, i32>(10)? != 0,
-            ))
+            Ok(Book::builder(row.get(0)?, row.get(1)?, row.get(9)?)
+                .sort(row.get(2)?)
+                .timestamp(parse_timestamp(&timestamp_str))
+                .pubdate(parse_timestamp(&pubdate_str))
+                .series_index(row.get(5)?)
+                .author_sort(row.get(6)?)
+                .isbn(row.get(7)?)
+                .lccn(row.get(8)?)
+                .has_cover(row.get::<_, i32>(10)? != 0))
         })
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
-    let mut enriched_books = Vec::new();
-
-    for book in books {
-        let book_id = book.id;
-        let mut enriched = book;
-        enriched = enriched.with_authors(get_book_authors(conn, book_id)?);
-        enriched = enriched.with_publishers(get_book_publishers(conn, book_id)?);
-        enriched = enriched.with_tags(get_book_tags(conn, book_id)?);
-        enriched = enriched.with_series(get_book_series(conn, book_id)?);
-        enriched = enriched.with_comments(get_book_comments(conn, book_id)?);
-        enriched = enriched.with_rating(get_book_rating(conn, book_id)?);
-        enriched = enriched.with_formats(get_book_formats(conn, book_id)?);
-        enriched = enriched.with_identifiers(get_book_identifiers(conn, book_id)?);
-        enriched = enriched.with_languages(get_book_languages(conn, book_id)?);
-
-        enriched_books.push(enriched);
-    }
+    let enriched_books = books
+        .into_iter()
+        .map(|book_builder| book_builder.with_db(conn).fetch_all().build())
+        .collect::<Result<Vec<_>>>()?;
 
     Ok(enriched_books)
 }
 
-fn get_book_authors(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Author>> {
+pub fn fetch_book_authors(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Author>> {
     let mut stmt = conn.prepare(
         "SELECT a.id, a.name, a.sort
          FROM authors a
@@ -105,14 +73,14 @@ fn get_book_authors(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Autho
         .query_map(params![book_id], |row| {
             Ok(Author::new(row.get(0)?, row.get(1)?, row.get(2)?))
         })
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
     Ok(authors)
 }
 
-fn get_book_publishers(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<String>> {
+pub fn fetch_book_publishers(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<String>> {
     let mut stmt = conn.prepare(
         "SELECT p.name
          FROM publishers p
@@ -122,14 +90,14 @@ fn get_book_publishers(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<St
 
     let publishers = stmt
         .query_map(params![book_id], |row| row.get(0))
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
     Ok(publishers)
 }
 
-fn get_book_tags(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Tag>> {
+pub fn fetch_book_tags(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Tag>> {
     let mut stmt = conn.prepare(
         "SELECT t.id, t.name
          FROM tags t
@@ -141,14 +109,14 @@ fn get_book_tags(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Tag>> {
         .query_map(params![book_id], |row| {
             Ok(Tag::new(row.get(0)?, row.get(1)?))
         })
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
     Ok(tags)
 }
 
-fn get_book_series(conn: &DatabaseConnection, book_id: u32) -> Result<Option<Series>> {
+pub fn fetch_book_series(conn: &DatabaseConnection, book_id: u32) -> Result<Option<Series>> {
     let result = conn.query_row(
         "SELECT s.id, s.name
          FROM series s
@@ -165,7 +133,7 @@ fn get_book_series(conn: &DatabaseConnection, book_id: u32) -> Result<Option<Ser
     }
 }
 
-fn get_book_comments(conn: &DatabaseConnection, book_id: u32) -> Result<Option<String>> {
+pub fn fetch_book_comments(conn: &DatabaseConnection, book_id: u32) -> Result<Option<String>> {
     let result = conn.query_row(
         "SELECT text FROM comments WHERE book = ?1",
         params![book_id],
@@ -179,7 +147,7 @@ fn get_book_comments(conn: &DatabaseConnection, book_id: u32) -> Result<Option<S
     }
 }
 
-fn get_book_rating(conn: &DatabaseConnection, book_id: u32) -> Result<Option<u8>> {
+pub fn fetch_book_rating(conn: &DatabaseConnection, book_id: u32) -> Result<Option<u8>> {
     let result = conn.query_row(
         "SELECT r.rating
          FROM ratings r
@@ -199,33 +167,33 @@ fn get_book_rating(conn: &DatabaseConnection, book_id: u32) -> Result<Option<u8>
     }
 }
 
-fn get_book_formats(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<String>> {
+pub fn fetch_book_formats(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<String>> {
     let mut stmt = conn.prepare("SELECT format FROM data WHERE book = ?1 ORDER BY id ASC")?;
 
     let formats = stmt
         .query_map(params![book_id], |row| row.get(0))
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
     Ok(formats)
 }
 
-fn get_book_identifiers(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Identifier>> {
+pub fn fetch_book_identifiers(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Identifier>> {
     let mut stmt = conn.prepare("SELECT book, type, val FROM identifiers WHERE book = ?1")?;
 
     let identifiers = stmt
         .query_map(params![book_id], |row| {
             Ok(Identifier::new(row.get(0)?, row.get(1)?, row.get(2)?))
         })
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
     Ok(identifiers)
 }
 
-fn get_book_languages(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<String>> {
+pub fn fetch_book_languages(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<String>> {
     let mut stmt = conn.prepare(
         "SELECT l.lang_code
          FROM languages l
@@ -236,9 +204,9 @@ fn get_book_languages(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Str
 
     let languages = stmt
         .query_map(params![book_id], |row| row.get(0))
-        .map_err(|e| CalibreDbError::from(e))?
+        .map_err(CalibreDbError::from)?
         .collect::<std::result::Result<Vec<_>, _>>()
-        .map_err(|e| CalibreDbError::from(e))?;
+        .map_err(CalibreDbError::from)?;
 
     Ok(languages)
 }
@@ -246,8 +214,8 @@ fn get_book_languages(conn: &DatabaseConnection, book_id: u32) -> Result<Vec<Str
 fn parse_timestamp(timestamp_str: &str) -> DateTime<Utc> {
     DateTime::parse_from_rfc3339(timestamp_str)
         .ok()
-        .and_then(|dt| Some(dt.with_timezone(&Utc)))
-        .unwrap_or_else(|| Utc::now())
+        .map(|dt| dt.with_timezone(&Utc))
+        .unwrap_or_else(Utc::now)
 }
 
 #[cfg(test)]
@@ -257,7 +225,7 @@ mod tests {
     use tempfile::NamedTempFile;
 
     fn create_test_db_with_books() -> Result<(DatabaseConnection, NamedTempFile)> {
-        let temp_file = NamedTempFile::new().map_err(|e| CalibreDbError::from(e))?;
+        let temp_file = NamedTempFile::new().map_err(CalibreDbError::from)?;
         let path = temp_file.path().to_path_buf();
 
         let conn = Connection::open(&path)?;

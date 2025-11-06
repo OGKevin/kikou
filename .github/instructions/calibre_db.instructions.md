@@ -57,12 +57,19 @@ Language codes are stored as references (foreign keys) to the `languages` table,
 
 ## Build & Test
 ```
-cargo check          # Verify compilation
-cargo fmt            # Format code
-cargo clippy         # Lint
-cargo test           # Run all tests
-cargo test --lib    # Unit tests only
-cargo test --test integration_tests  # Integration tests
+cargo check -p calibre_db    # Verify compilation
+cargo fmt                     # Format code (or cargo fmt -p calibre_db)
+cargo clippy -p calibre_db   # Lint (or run from calibre_db directory)
+cargo test -p calibre_db     # Run all tests
+cargo test -p calibre_db --lib    # Unit tests only
+cargo test -p calibre_db --test integration_tests  # Integration tests
+```
+
+Alternatively, run from the workspace root or use `--workspace` to check all crates:
+```
+cargo check --workspace
+cargo test --workspace
+cargo clippy --workspace
 ```
 
 ## Troubleshooting

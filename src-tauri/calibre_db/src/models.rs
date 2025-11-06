@@ -26,31 +26,53 @@ pub struct Book {
 }
 
 impl Book {
-    pub fn new(
-        id: u32,
-        title: String,
-        sort: String,
-        timestamp: DateTime<Utc>,
-        pubdate: DateTime<Utc>,
-        series_index: f32,
-        author_sort: String,
-        isbn: String,
-        lccn: String,
-        path: String,
-        has_cover: bool,
-    ) -> Self {
-        Book {
+    /// Creates a new book builder with the given ID, title, and path.
+    ///
+    /// Returns `BookBuilder<'static>` to allow building without a database reference.
+    /// The builder can later be configured with a database via `with_db()` to enable
+    /// automatic relation fetching during `build()`.
+    ///
+    /// # Examples
+    ///
+    /// Building without a database (no relation fetching):
+    /// ```
+    /// use calibre_db::Book;
+    /// let book = Book::builder(1, "Title".into(), "/path".into())
+    ///     .sort("book, title".into())
+    ///     .build()
+    ///     .unwrap();
+    /// assert_eq!(book.id, 1);
+    /// assert_eq!(book.title, "Title");
+    /// ```
+    ///
+    /// Building with a database to enable relation fetching:
+    /// ```ignore
+    /// use calibre_db::Book;
+    /// let book = Book::builder(1, "Title".into(), "/path".into())
+    ///     .with_db(&db)
+    ///     .fetch_all()
+    ///     .build()?;
+    /// ```
+    ///
+    /// # Lifetime Design
+    /// The function returns `BookBuilder<'static>` instead of `BookBuilder<'a>` because
+    /// initially the builder has no database reference (db is `None`). When `with_db()`
+    /// is called later, the lifetime constraint becomes bound to the database reference's
+    /// lifetime. This design allows building complete books without a database while still
+    /// supporting optional database-aware relation fetching.
+    pub fn builder(id: u32, title: String, path: String) -> BookBuilder<'static> {
+        BookBuilder {
             id,
             title,
-            sort,
-            timestamp,
-            pubdate,
-            series_index,
-            author_sort,
-            isbn,
-            lccn,
             path,
-            has_cover,
+            sort: String::new(),
+            timestamp: Utc::now(),
+            pubdate: Utc::now(),
+            series_index: 0.0,
+            author_sort: String::new(),
+            isbn: String::new(),
+            lccn: String::new(),
+            has_cover: false,
             authors: Vec::new(),
             publishers: Vec::new(),
             tags: Vec::new(),
@@ -60,52 +82,255 @@ impl Book {
             formats: Vec::new(),
             identifiers: Vec::new(),
             languages: Vec::new(),
+            fetch_authors: false,
+            fetch_publishers: false,
+            fetch_tags: false,
+            fetch_series: false,
+            fetch_comments: false,
+            fetch_rating: false,
+            fetch_formats: false,
+            fetch_identifiers: false,
+            fetch_languages: false,
+            db: None,
         }
     }
+}
 
-    pub fn with_authors(mut self, authors: Vec<Author>) -> Self {
+pub struct BookBuilder<'a> {
+    id: u32,
+    title: String,
+    path: String,
+    sort: String,
+    timestamp: DateTime<Utc>,
+    pubdate: DateTime<Utc>,
+    series_index: f32,
+    author_sort: String,
+    isbn: String,
+    lccn: String,
+    has_cover: bool,
+    authors: Vec<Author>,
+    publishers: Vec<String>,
+    tags: Vec<Tag>,
+    series: Option<Series>,
+    comments: Option<String>,
+    rating: Option<u8>,
+    formats: Vec<String>,
+    identifiers: Vec<Identifier>,
+    languages: Vec<String>,
+    fetch_authors: bool,
+    fetch_publishers: bool,
+    fetch_tags: bool,
+    fetch_series: bool,
+    fetch_comments: bool,
+    fetch_rating: bool,
+    fetch_formats: bool,
+    fetch_identifiers: bool,
+    fetch_languages: bool,
+    db: Option<&'a crate::schema::DatabaseConnection>,
+}
+
+impl<'a> BookBuilder<'a> {
+    pub fn sort(mut self, sort: String) -> Self {
+        self.sort = sort;
+        self
+    }
+
+    pub fn timestamp(mut self, timestamp: DateTime<Utc>) -> Self {
+        self.timestamp = timestamp;
+        self
+    }
+
+    pub fn pubdate(mut self, pubdate: DateTime<Utc>) -> Self {
+        self.pubdate = pubdate;
+        self
+    }
+
+    pub fn series_index(mut self, series_index: f32) -> Self {
+        self.series_index = series_index;
+        self
+    }
+
+    pub fn author_sort(mut self, author_sort: String) -> Self {
+        self.author_sort = author_sort;
+        self
+    }
+
+    pub fn isbn(mut self, isbn: String) -> Self {
+        self.isbn = isbn;
+        self
+    }
+
+    pub fn lccn(mut self, lccn: String) -> Self {
+        self.lccn = lccn;
+        self
+    }
+
+    pub fn has_cover(mut self, has_cover: bool) -> Self {
+        self.has_cover = has_cover;
+        self
+    }
+
+    pub fn authors(mut self, authors: Vec<Author>) -> Self {
         self.authors = authors;
         self
     }
 
-    pub fn with_publishers(mut self, publishers: Vec<String>) -> Self {
+    pub fn publishers(mut self, publishers: Vec<String>) -> Self {
         self.publishers = publishers;
         self
     }
 
-    pub fn with_tags(mut self, tags: Vec<Tag>) -> Self {
+    pub fn tags(mut self, tags: Vec<Tag>) -> Self {
         self.tags = tags;
         self
     }
 
-    pub fn with_series(mut self, series: Option<Series>) -> Self {
+    pub fn series(mut self, series: Option<Series>) -> Self {
         self.series = series;
         self
     }
 
-    pub fn with_comments(mut self, comments: Option<String>) -> Self {
+    pub fn comments(mut self, comments: Option<String>) -> Self {
         self.comments = comments;
         self
     }
 
-    pub fn with_rating(mut self, rating: Option<u8>) -> Self {
+    pub fn rating(mut self, rating: Option<u8>) -> Self {
         self.rating = rating;
         self
     }
 
-    pub fn with_formats(mut self, formats: Vec<String>) -> Self {
+    pub fn formats(mut self, formats: Vec<String>) -> Self {
         self.formats = formats;
         self
     }
 
-    pub fn with_identifiers(mut self, identifiers: Vec<Identifier>) -> Self {
+    pub fn identifiers(mut self, identifiers: Vec<Identifier>) -> Self {
         self.identifiers = identifiers;
         self
     }
 
-    pub fn with_languages(mut self, languages: Vec<String>) -> Self {
+    pub fn languages(mut self, languages: Vec<String>) -> Self {
         self.languages = languages;
         self
+    }
+
+    pub fn with_db(mut self, db: &'a crate::schema::DatabaseConnection) -> Self {
+        self.db = Some(db);
+        self
+    }
+
+    pub fn fetch_authors(mut self, fetch: bool) -> Self {
+        self.fetch_authors = fetch;
+        self
+    }
+
+    pub fn fetch_publishers(mut self, fetch: bool) -> Self {
+        self.fetch_publishers = fetch;
+        self
+    }
+
+    pub fn fetch_tags(mut self, fetch: bool) -> Self {
+        self.fetch_tags = fetch;
+        self
+    }
+
+    pub fn fetch_series(mut self, fetch: bool) -> Self {
+        self.fetch_series = fetch;
+        self
+    }
+
+    pub fn fetch_comments(mut self, fetch: bool) -> Self {
+        self.fetch_comments = fetch;
+        self
+    }
+
+    pub fn fetch_rating(mut self, fetch: bool) -> Self {
+        self.fetch_rating = fetch;
+        self
+    }
+
+    pub fn fetch_formats(mut self, fetch: bool) -> Self {
+        self.fetch_formats = fetch;
+        self
+    }
+
+    pub fn fetch_identifiers(mut self, fetch: bool) -> Self {
+        self.fetch_identifiers = fetch;
+        self
+    }
+
+    pub fn fetch_languages(mut self, fetch: bool) -> Self {
+        self.fetch_languages = fetch;
+        self
+    }
+
+    pub fn fetch_all(mut self) -> Self {
+        self.fetch_authors = true;
+        self.fetch_publishers = true;
+        self.fetch_tags = true;
+        self.fetch_series = true;
+        self.fetch_comments = true;
+        self.fetch_rating = true;
+        self.fetch_formats = true;
+        self.fetch_identifiers = true;
+        self.fetch_languages = true;
+        self
+    }
+
+    pub fn build(mut self) -> crate::error::Result<Book> {
+        if let Some(db) = self.db {
+            if self.fetch_authors {
+                self.authors = crate::queries::fetch_book_authors(db, self.id)?;
+            }
+            if self.fetch_publishers {
+                self.publishers = crate::queries::fetch_book_publishers(db, self.id)?;
+            }
+            if self.fetch_tags {
+                self.tags = crate::queries::fetch_book_tags(db, self.id)?;
+            }
+            if self.fetch_series {
+                self.series = crate::queries::fetch_book_series(db, self.id)?;
+            }
+            if self.fetch_comments {
+                self.comments = crate::queries::fetch_book_comments(db, self.id)?;
+            }
+            if self.fetch_rating {
+                self.rating = crate::queries::fetch_book_rating(db, self.id)?;
+            }
+            if self.fetch_formats {
+                self.formats = crate::queries::fetch_book_formats(db, self.id)?;
+            }
+            if self.fetch_identifiers {
+                self.identifiers = crate::queries::fetch_book_identifiers(db, self.id)?;
+            }
+            if self.fetch_languages {
+                self.languages = crate::queries::fetch_book_languages(db, self.id)?;
+            }
+        }
+
+        Ok(Book {
+            id: self.id,
+            title: self.title,
+            path: self.path,
+            sort: self.sort,
+            timestamp: self.timestamp,
+            pubdate: self.pubdate,
+            series_index: self.series_index,
+            author_sort: self.author_sort,
+            isbn: self.isbn,
+            lccn: self.lccn,
+            has_cover: self.has_cover,
+            authors: self.authors,
+            publishers: self.publishers,
+            tags: self.tags,
+            series: self.series,
+            comments: self.comments,
+            rating: self.rating,
+            formats: self.formats,
+            identifiers: self.identifiers,
+            languages: self.languages,
+        })
     }
 }
 
@@ -217,29 +442,20 @@ mod tests {
 
     #[test]
     fn test_book_creation() {
-        let now = Utc::now();
-        let book = Book::new(
-            1,
-            "Test Book".to_string(),
-            "book, test".to_string(),
-            now,
-            now,
-            1.0,
-            "Author, Test".to_string(),
-            "123-456-789".to_string(),
-            "".to_string(),
-            "/path/to/book".to_string(),
-            true,
-        );
+        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string())
+            .sort("book, test".to_string())
+            .has_cover(true)
+            .build()
+            .unwrap();
 
         assert_eq!(book.id, 1);
         assert_eq!(book.title, "Test Book");
+        assert_eq!(book.path, "/path/to/book");
         assert!(book.authors.is_empty());
     }
 
     #[test]
     fn test_book_builder_chain() {
-        let now = Utc::now();
         let authors = vec![Author::new(
             1,
             "Test Author".to_string(),
@@ -247,21 +463,13 @@ mod tests {
         )];
         let tags = vec![Tag::new(1, "Fiction".to_string())];
 
-        let book = Book::new(
-            1,
-            "Test Book".to_string(),
-            "book, test".to_string(),
-            now,
-            now,
-            1.0,
-            "Author, Test".to_string(),
-            "123-456-789".to_string(),
-            "".to_string(),
-            "/path/to/book".to_string(),
-            true,
-        )
-        .with_authors(authors)
-        .with_tags(tags);
+        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string())
+            .sort("book, test".to_string())
+            .authors(authors)
+            .tags(tags)
+            .has_cover(true)
+            .build()
+            .unwrap();
 
         assert_eq!(book.authors.len(), 1);
         assert_eq!(book.tags.len(), 1);
@@ -296,7 +504,6 @@ mod tests {
 
     #[test]
     fn test_book_metadata_from_book() {
-        let now = Utc::now();
         let authors = vec![Author::new(
             1,
             "Test Author".to_string(),
@@ -305,23 +512,17 @@ mod tests {
         let tags = vec![Tag::new(1, "Fiction".to_string())];
         let series = Some(Series::new(1, "Test Series".to_string()));
 
-        let book = Book::new(
-            1,
-            "Test Book".to_string(),
-            "book, test".to_string(),
-            now,
-            now,
-            1.5,
-            "Author, Test".to_string(),
-            "123-456-789".to_string(),
-            "".to_string(),
-            "/path/to/book".to_string(),
-            true,
-        )
-        .with_authors(authors)
-        .with_tags(tags)
-        .with_series(series)
-        .with_rating(Some(4));
+        let book = Book::builder(1, "Test Book".to_string(), "/path/to/book".to_string())
+            .sort("book, test".to_string())
+            .series_index(1.5)
+            .isbn("123-456-789".to_string())
+            .authors(authors)
+            .tags(tags)
+            .series(series)
+            .rating(Some(4))
+            .has_cover(true)
+            .build()
+            .unwrap();
 
         let metadata = BookMetadata::from_book(&book);
         assert_eq!(metadata.title, "Test Book");

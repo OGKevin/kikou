@@ -41,7 +41,7 @@ mod tests {
     use tempfile::NamedTempFile;
 
     fn create_test_db() -> Result<(DatabaseConnection, NamedTempFile)> {
-        let temp_file = NamedTempFile::new().map_err(|e| CalibreDbError::from(e))?;
+        let temp_file = NamedTempFile::new().map_err(CalibreDbError::from)?;
         let path = temp_file.path().to_path_buf();
 
         let conn = Connection::open(&path)?;

@@ -20,13 +20,15 @@ When changing rust files, make sure to run `cargo fmt` to format the code and
 
 Next to this, ensure the code compiles and passes all tests by running:
 
-- `cargo check`
-- `cargo test`
+- `cargo check --workspace` (or `cargo check` from workspace root)
+- `cargo test --workspace` (or `cargo test` from workspace root)
 
 Or use:
 
-- `devenv shell -- cargo check`
-- `devenv shell -- cargo test`
+- `devenv shell -- cargo check --workspace`
+- `devenv shell -- cargo test --workspace`
+
+**Note:** The project uses a Rust workspace with members `src-tauri` and `src-tauri/calibre_db`. Run commands from the workspace root (`/workspaces/kikou`) to check and test all crates together, or use `--workspace` flag to ensure both crates are included.
 
 ## Frontend/Typescript Files
 
@@ -60,9 +62,13 @@ Tests should be added first before the actual implementation.
 
 Rust tests can be executed via:
 
-`cargo test --manifest-path=src-tauri/Cargo.toml`
+`cargo test --workspace`
 Or use:
-`devenv shell -- cargo test --manifest-path=src-tauri/Cargo.toml`
+`devenv shell -- cargo test --workspace`
+
+To run tests for a specific crate:
+- `cargo test -p calibre_db` (calibre_db crate only)
+- `cargo test --manifest-path=src-tauri/Cargo.toml` (src-tauri crate only)
 
 ## Code Style
 
