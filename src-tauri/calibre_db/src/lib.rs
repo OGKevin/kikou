@@ -15,7 +15,8 @@ pub struct CalibreDatabase {
 
 // SAFETY: CalibreDatabase wraps rusqlite::Connection, which is thread-safe.
 // rusqlite uses SQLite's built-in locking mechanisms to ensure safe concurrent access.
-// All database operations in this crate are read-only, preventing data races.
+// At the time of writing, all database operations in this crate are read-only, preventing data races.
+// If write operations are introduced in the future, this safety justification should be reassessed.
 unsafe impl Send for CalibreDatabase {}
 unsafe impl Sync for CalibreDatabase {}
 

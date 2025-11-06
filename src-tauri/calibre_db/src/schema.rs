@@ -22,7 +22,7 @@ impl DatabaseConnection {
             .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
     }
 
-    pub fn prepare(&self, query: &str) -> Result<rusqlite::Statement> {
+    pub fn prepare<'a>(&'a self, query: &str) -> Result<rusqlite::Statement<'a>> {
         self.conn
             .prepare(query)
             .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
