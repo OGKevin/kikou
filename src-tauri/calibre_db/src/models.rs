@@ -444,9 +444,6 @@ mod tests {
         fn all_books(&self) -> crate::Result<Vec<Book>> {
             unimplemented!()
         }
-        fn list_books(&self) -> crate::Result<Vec<Book>> {
-            unimplemented!()
-        }
         fn fetch_book_authors(&self, _book_id: u32) -> crate::Result<Vec<Author>> {
             Ok(Vec::new())
         }

@@ -10,11 +10,58 @@ use chrono::{DateTime, Utc};
 use rusqlite::params;
 use std::path::Path;
 
+/// Struct representing a row from the books table.
+/// Used to extract data from SQL queries before building Book objects.
+struct BookRow {
+    id: u32,
+    title: String,
+    sort: String,
+    timestamp_str: String,
+    pubdate_str: String,
+    series_index: f32,
+    author_sort: String,
+    isbn: String,
+    lccn: String,
+    path: String,
+    has_cover: i32,
+}
+
+impl BookRow {
+    // Field indices for books table SELECT query
+    const IDX_ID: usize = 0;
+    const IDX_TITLE: usize = 1;
+    const IDX_SORT: usize = 2;
+    const IDX_TIMESTAMP: usize = 3;
+    const IDX_PUBDATE: usize = 4;
+    const IDX_SERIES_INDEX: usize = 5;
+    const IDX_AUTHOR_SORT: usize = 6;
+    const IDX_ISBN: usize = 7;
+    const IDX_LCCN: usize = 8;
+    const IDX_PATH: usize = 9;
+    const IDX_HAS_COVER: usize = 10;
+
+    /// Extracts a BookRow from a rusqlite Row.
+    fn from_row(row: &rusqlite::Row) -> rusqlite::Result<Self> {
+        Ok(BookRow {
+            id: row.get(Self::IDX_ID)?,
+            title: row.get(Self::IDX_TITLE)?,
+            sort: row.get(Self::IDX_SORT)?,
+            timestamp_str: row.get(Self::IDX_TIMESTAMP)?,
+            pubdate_str: row.get(Self::IDX_PUBDATE)?,
+            series_index: row.get(Self::IDX_SERIES_INDEX)?,
+            author_sort: row.get(Self::IDX_AUTHOR_SORT)?,
+            isbn: row.get(Self::IDX_ISBN)?,
+            lccn: row.get(Self::IDX_LCCN)?,
+            path: row.get(Self::IDX_PATH)?,
+            has_cover: row.get(Self::IDX_HAS_COVER)?,
+        })
+    }
+}
+
 /// Trait defining all read-only database operations for Calibre libraries.
 ///
 /// This trait provides a compile-time guarantee that implementing types
-/// only perform SELECT queries. The DatabaseConnection validates this
-/// constraint in debug builds by checking all prepared statements.
+/// only perform SELECT queries.
 ///
 /// # Safety
 /// Types implementing this trait must ensure that:
@@ -24,7 +71,6 @@ use std::path::Path;
 pub trait ReadOnlyDatabase: Send + Sync {
     fn get_book(&self, book_id: u32) -> Result<Book>;
     fn all_books(&self) -> Result<Vec<Book>>;
-    fn list_books(&self) -> Result<Vec<Book>>;
     fn fetch_book_authors(&self, book_id: u32) -> Result<Vec<Author>>;
     fn fetch_book_publishers(&self, book_id: u32) -> Result<Vec<String>>;
     fn fetch_book_tags(&self, book_id: u32) -> Result<Vec<Tag>>;
@@ -42,24 +88,22 @@ pub struct CalibreDatabase {
 
 impl ReadOnlyDatabase for CalibreDatabase {
     fn get_book(&self, book_id: u32) -> Result<Book> {
-        let (id, title, sort, timestamp_str, pubdate_str, series_index, author_sort, isbn, lccn, path, has_cover): (u32, String, String, String, String, f32, String, String, String, String, i32) = self.conn.query_row(
+        let book_row = self.conn.query_row(
             "SELECT id, title, sort, timestamp, pubdate, series_index, author_sort, isbn, lccn, path, has_cover
              FROM books WHERE id = ?1",
             params![book_id],
-            |row| {
-                Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?, row.get(5)?, row.get(6)?, row.get(7)?, row.get(8)?, row.get(9)?, row.get(10)?))
-            },
+            BookRow::from_row,
         )?;
 
-        Book::builder(id, title, path, self)
-            .sort(sort)
-            .timestamp(parse_timestamp(&timestamp_str))
-            .pubdate(parse_timestamp(&pubdate_str))
-            .series_index(series_index)
-            .author_sort(author_sort)
-            .isbn(isbn)
-            .lccn(lccn)
-            .has_cover(has_cover != 0)
+        Book::builder(book_row.id, book_row.title, book_row.path, self)
+            .sort(book_row.sort)
+            .timestamp(parse_timestamp(&book_row.timestamp_str))
+            .pubdate(parse_timestamp(&book_row.pubdate_str))
+            .series_index(book_row.series_index)
+            .author_sort(book_row.author_sort)
+            .isbn(book_row.isbn)
+            .lccn(book_row.lccn)
+            .has_cover(book_row.has_cover != 0)
             .fetch_all()
             .build()
     }
@@ -70,64 +114,29 @@ impl ReadOnlyDatabase for CalibreDatabase {
              FROM books ORDER BY sort ASC")?;
 
         let books = stmt
-            .query_map([], |row| {
-                let timestamp_str: String = row.get(3)?;
-                let pubdate_str: String = row.get(4)?;
-
-                Ok((
-                    row.get::<_, u32>(0)?,
-                    row.get::<_, String>(1)?,
-                    row.get::<_, String>(2)?,
-                    timestamp_str,
-                    pubdate_str,
-                    row.get::<_, f32>(5)?,
-                    row.get::<_, String>(6)?,
-                    row.get::<_, String>(7)?,
-                    row.get::<_, String>(8)?,
-                    row.get::<_, String>(9)?,
-                    row.get::<_, i32>(10)?,
-                ))
-            })
+            .query_map([], BookRow::from_row)
             .map_err(CalibreDbError::from)?
             .collect::<std::result::Result<Vec<_>, _>>()
             .map_err(CalibreDbError::from)?;
 
         let enriched_books = books
             .into_iter()
-            .map(
-                |(
-                    id,
-                    title,
-                    sort,
-                    timestamp_str,
-                    pubdate_str,
-                    series_index,
-                    author_sort,
-                    isbn,
-                    lccn,
-                    path,
-                    has_cover,
-                )| {
-                    Book::builder(id, title, path, self)
-                        .sort(sort)
-                        .timestamp(parse_timestamp(&timestamp_str))
-                        .pubdate(parse_timestamp(&pubdate_str))
-                        .series_index(series_index)
-                        .author_sort(author_sort)
-                        .isbn(isbn)
-                        .lccn(lccn)
-                        .has_cover(has_cover != 0)
-                        .fetch_all()
-                        .build()
-                },
-            )
+            .map(|book_row| {
+                Book::builder(book_row.id, book_row.title, book_row.path, self)
+                    .sort(book_row.sort)
+                    .timestamp(parse_timestamp(&book_row.timestamp_str))
+                    .pubdate(parse_timestamp(&book_row.pubdate_str))
+                    .series_index(book_row.series_index)
+                    .author_sort(book_row.author_sort)
+                    .isbn(book_row.isbn)
+                    .lccn(book_row.lccn)
+                    .has_cover(book_row.has_cover != 0)
+                    .fetch_all()
+                    .build()
+            })
             .collect::<Result<Vec<_>>>()?;
 
         Ok(enriched_books)
-    }
-
-    fn list_books(&self) -> Result<Vec<Book>> {
-        self.all_books()
     }
 
     fn fetch_book_authors(&self, book_id: u32) -> Result<Vec<Author>> {
@@ -274,10 +283,10 @@ impl ReadOnlyDatabase for CalibreDatabase {
     }
 }
 
-// SAFETY: CalibreDatabase implements ReadOnlyDatabase, ensuring all operations are read-only.
+// SAFETY: CalibreDatabase implements ReadOnlyDatabase trait, which by design enforces
+// read-only operations through its API. All methods perform only SELECT queries.
 // rusqlite::Connection is thread-safe and uses SQLite's built-in locking mechanisms.
-// DatabaseConnection validates read-only constraint in debug builds via prepare_validated().
-// If write operations are introduced, REMOVE ReadOnlyDatabase impl and reassess these unsafe impls.
+// If write operations are needed, introduce a separate ReadWriteDatabase trait.
 unsafe impl Send for CalibreDatabase {}
 unsafe impl Sync for CalibreDatabase {}
 

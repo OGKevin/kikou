@@ -1,4 +1,4 @@
-use crate::error::Result;
+use crate::error::{CalibreDbError, Result};
 use rusqlite::Connection;
 use std::path::Path;
 
@@ -17,11 +17,13 @@ impl DatabaseConnection {
     where
         F: FnOnce(&rusqlite::Row) -> rusqlite::Result<T>,
     {
-        self.conn.query_row(query, params, f).map_err(Into::into)
+        self.conn
+            .query_row(query, params, f)
+            .map_err(CalibreDbError::from)
     }
 
     pub fn prepare<'a>(&'a self, query: &str) -> Result<rusqlite::Statement<'a>> {
-        self.conn.prepare(query).map_err(Into::into)
+        self.conn.prepare(query).map_err(CalibreDbError::from)
     }
 }
 
