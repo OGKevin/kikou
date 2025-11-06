@@ -33,16 +33,16 @@ use calibre_db::CalibreDatabase;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let db = CalibreDatabase::open("/path/to/library/metadata.db")?;
-    
+
     // Get a specific book
     let book = db.get_book(1)?;
     println!("Title: {}", book.title);
     println!("Authors: {:?}", book.authors);
-    
+
     // Get all books
     let books = db.all_books()?;
     println!("Total books: {}", books.len());
-    
+
     Ok(())
 }
 ```
@@ -118,8 +118,8 @@ let db = CalibreDatabase::open("metadata.db")?;
 let books = db.all_books()?;
 
 for book in books {
-    println!("{}: {} by {}", 
-        book.id, 
+    println!("{}: {} by {}",
+        book.id,
         book.title,
         book.author_sort);
 }
@@ -140,7 +140,7 @@ println!("Published: {}", book.pubdate);
 println!("Added: {}", book.timestamp);
 
 // Relations
-println!("Authors: {} ({})", 
+println!("Authors: {} ({})",
     book.authors.len(),
     book.author_sort);
 println!("Publishers: {}", book.publishers.join(", "));

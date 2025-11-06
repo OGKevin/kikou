@@ -81,9 +81,10 @@
     eslint src
     pnpm test
     pnpm run build
-    cargo test --manifest-path ./src-tauri/Cargo.toml
-    cargo check --manifest-path ./src-tauri/Cargo.toml
-    cargo build --manifest-path ./src-tauri/Cargo.toml
+    cargo test
+    cargo check
+    cargo clippy
+    cargo build
     nix flake check
     nix eval
   '';

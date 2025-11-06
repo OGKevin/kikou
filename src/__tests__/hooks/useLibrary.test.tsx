@@ -94,7 +94,7 @@ describe("useLibrary", () => {
   it("handles error when opening library fails", async () => {
     const errorMessage = "Failed to open library";
     (libraryApi.libraryOpen as jest.Mock).mockRejectedValueOnce(
-      new Error(errorMessage)
+      new Error(errorMessage),
     );
     (libraryApi.libraryGetAllBooks as jest.Mock).mockResolvedValue([]);
 
@@ -128,8 +128,7 @@ describe("useLibrary", () => {
   it("sets loading state while fetching books", async () => {
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockImplementation(
-      () =>
-        new Promise((resolve) => setTimeout(() => resolve(mockBooks), 50))
+      () => new Promise((resolve) => setTimeout(() => resolve(mockBooks), 50)),
     );
 
     const { result } = renderHook(() => useLibrary(), { wrapper });
@@ -150,7 +149,7 @@ describe("useLibrary", () => {
     const errorMessage = "Failed to load books";
     (libraryApi.libraryOpen as jest.Mock).mockResolvedValue(undefined);
     (libraryApi.libraryGetAllBooks as jest.Mock).mockRejectedValue(
-      new Error(errorMessage)
+      new Error(errorMessage),
     );
 
     const { result } = renderHook(() => useLibrary(), { wrapper });
@@ -224,7 +223,7 @@ describe("useLibrary", () => {
 
   it("handles string error objects", async () => {
     (libraryApi.libraryOpen as jest.Mock).mockRejectedValueOnce(
-      "String error message"
+      "String error message",
     );
 
     const { result } = renderHook(() => useLibrary(), { wrapper });
@@ -272,7 +271,9 @@ describe("useLibrary", () => {
       });
 
       // Both API calls should be made
-      expect(libraryApi.libraryOpen).toHaveBeenCalledWith("calibre:///test/path");
+      expect(libraryApi.libraryOpen).toHaveBeenCalledWith(
+        "calibre:///test/path",
+      );
 
       // Manually load books to verify the call happens
       await act(async () => {
@@ -295,7 +296,7 @@ describe("useLibrary", () => {
 
       // Verify the backend was called
       expect(libraryApi.libraryOpen).toHaveBeenCalledWith(
-        "calibre:///saved/path"
+        "calibre:///saved/path",
       );
 
       // Load books
@@ -324,7 +325,7 @@ describe("useLibrary", () => {
       // Wait for auto-load to happen
       await waitFor(() => {
         expect(libraryApi.libraryOpen).toHaveBeenCalledWith(
-          "calibre:///saved/path"
+          "calibre:///saved/path",
         );
       });
 
@@ -348,9 +349,8 @@ describe("useLibrary", () => {
         await result.current.openLibrary("/test/path");
       });
 
-      const openCallCount = (
-        libraryApi.libraryOpen as jest.Mock
-      ).mock.calls.length;
+      const openCallCount = (libraryApi.libraryOpen as jest.Mock).mock.calls
+        .length;
 
       // Try opening the same path again
       await act(async () => {
@@ -359,7 +359,7 @@ describe("useLibrary", () => {
 
       // Should have called open twice (once for each call)
       expect((libraryApi.libraryOpen as jest.Mock).mock.calls.length).toBe(
-        openCallCount + 1
+        openCallCount + 1,
       );
     });
 

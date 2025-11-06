@@ -43,7 +43,12 @@ impl Book {
     /// assert_eq!(book.id, 1);
     /// assert_eq!(book.title, "Title");
     /// ```
-    pub fn builder(id: u32, title: String, path: String, db: &dyn ReadOnlyDatabase) -> BookBuilder {
+    pub fn builder(
+        id: u32,
+        title: String,
+        path: String,
+        db: &dyn ReadOnlyDatabase,
+    ) -> BookBuilder<'_> {
         BookBuilder {
             id,
             title,

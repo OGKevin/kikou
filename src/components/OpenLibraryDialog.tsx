@@ -128,20 +128,16 @@ export function OpenLibraryDialog({
             />
           </FormControl>
 
-          <Button
-            onClick={handleBrowse}
-            variant="outlined"
-            color="neutral"
-          >
+          <Button onClick={handleBrowse} variant="outlined" color="neutral">
             Browse
           </Button>
 
-          <Stack direction="row" spacing={1} sx={{ justifyContent: "flex-end" }}>
-            <Button
-              onClick={handleClose}
-              variant="plain"
-              color="neutral"
-            >
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ justifyContent: "flex-end" }}
+          >
+            <Button onClick={handleClose} variant="plain" color="neutral">
               Cancel
             </Button>
             <Button

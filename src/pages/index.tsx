@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Typography,
-  Card,
-  Alert,
-  Stack,
-} from "@mui/joy";
+import { Box, Button, Typography, Card, Alert, Stack } from "@mui/joy";
 import { useResetNavigation } from "@/hooks/useResetNavigation";
 import { useLibrary } from "@/hooks/useLibrary";
 import { useTableColumns } from "@/hooks/useTableColumns";
@@ -19,21 +12,11 @@ import LoadingOverlay from "@/components/ui/LoadingOverlay";
 export default function HomePage() {
   const [openLibraryDialogOpen, setOpenLibraryDialogOpen] = useState(false);
 
-  const {
-    books,
-    isLoading,
-    error,
-    libraryPath,
-    openLibrary,
-    isLibraryOpen,
-  } = useLibrary();
+  const { books, isLoading, error, libraryPath, openLibrary, isLibraryOpen } =
+    useLibrary();
 
-  const {
-    columns,
-    toggleColumnVisibility,
-    reorderColumns,
-    resetColumns,
-  } = useTableColumns();
+  const { columns, toggleColumnVisibility, reorderColumns, resetColumns } =
+    useTableColumns();
 
   useResetNavigation();
 
@@ -138,12 +121,23 @@ export default function HomePage() {
         </Stack>
 
         {error && (
-          <Alert color="danger" variant="soft" sx={{ mb: 2, mx: 3, flexShrink: 0 }}>
+          <Alert
+            color="danger"
+            variant="soft"
+            sx={{ mb: 2, mx: 3, flexShrink: 0 }}
+          >
             {error}
           </Alert>
         )}
 
-        <Box sx={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }}>
+        <Box
+          sx={{
+            flex: 1,
+            minHeight: 0,
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <BooksTable
             books={books}
             columns={columns}

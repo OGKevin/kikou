@@ -17,6 +17,7 @@ Ensure strict typing across all TypeScript files to catch errors at compile time
 ## Guidelines
 
 ### Function Declarations
+
 ```typescript
 // Good - Explicit parameter and return types
 function getBookTitle(book: Book): string {
@@ -35,6 +36,7 @@ function getBookTitle(book: Book) {
 ```
 
 ### Object/Interface Definitions
+
 ```typescript
 // Good - Explicit typed object
 interface SearchQuery {
@@ -51,6 +53,7 @@ const query = {
 ```
 
 ### useState and State Management
+
 ```typescript
 // Good - Explicit type parameter
 const [books, setBooks] = useState<Book[]>([]);
@@ -61,6 +64,7 @@ const [books, setBooks] = useState([]);
 ```
 
 ### Event Handlers
+
 ```typescript
 // Good - Explicit event type
 const handleClick = (event: React.MouseEvent<HTMLButtonElement>): void => {
@@ -74,6 +78,7 @@ const handleClick = (event) => {
 ```
 
 ### Callback Functions
+
 ```typescript
 // Good - Explicit parameter and return types
 const handleToggle = (columnId: string): void => {
@@ -87,6 +92,7 @@ const handleToggle = (columnId) => {
 ```
 
 ### useMemo and useCallback
+
 ```typescript
 // Good - Explicit return type
 const filteredBooks = useMemo(
@@ -94,12 +100,9 @@ const filteredBooks = useMemo(
   [books, query],
 );
 
-const handleSort = useCallback(
-  (columnId: string): void => {
-    // Implementation
-  },
-  [],
-);
+const handleSort = useCallback((columnId: string): void => {
+  // Implementation
+}, []);
 
 // Bad - No return type
 const filteredBooks = useMemo(
@@ -109,6 +112,7 @@ const filteredBooks = useMemo(
 ```
 
 ### Union and Optional Types
+
 ```typescript
 // Good - Explicit union type
 type SortDirection = "asc" | "desc" | null;
@@ -123,6 +127,7 @@ const handleError = (message?) => {};
 ```
 
 ### Generic Types
+
 ```typescript
 // Good - Explicit generic parameter
 function parseQuery<T>(data: string): Record<string, T[]> {
@@ -136,6 +141,7 @@ function parseQuery(data: string) {
 ```
 
 ### Array Types
+
 ```typescript
 // Good - Explicit array type
 const books: Book[] = [];
@@ -149,6 +155,7 @@ const books = [];
 ```
 
 ### Ref Types
+
 ```typescript
 // Good - Explicit ref type
 const resizingColumn = useRef<string | null>(null);
@@ -161,12 +168,14 @@ const resizingColumn = useRef(null);
 ## When `any` or `unknown` is Acceptable
 
 Only use `any` or `unknown` when:
+
 1. Working with truly dynamic external data (e.g., JSON from API without schema)
 2. Integrating with untyped third-party libraries
 3. There is an explicit code comment explaining why
 4. The situation is temporary and there is a task to fix it
 
 **Always document with a comment:**
+
 ```typescript
 // TODO: Replace with proper type once API schema is defined
 const data: any = response.data;

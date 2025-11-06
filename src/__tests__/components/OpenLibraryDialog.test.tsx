@@ -26,7 +26,9 @@ describe("OpenLibraryDialog", () => {
     );
 
     expect(screen.getByText("Open Calibre Library")).toBeInTheDocument();
-    expect(screen.getByText(/Select the folder containing/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Select the folder containing/),
+    ).toBeInTheDocument();
   });
 
   it("does not render dialog when open is false", () => {
@@ -143,7 +145,9 @@ describe("OpenLibraryDialog", () => {
     await userEvent.click(browseButton);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue("/test/library/path")).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue("/test/library/path"),
+      ).toBeInTheDocument();
     });
 
     const openButton = screen.getByRole("button", { name: /Open Library/i });
@@ -155,7 +159,9 @@ describe("OpenLibraryDialog", () => {
   });
 
   it("displays error when file dialog fails", async () => {
-    (dialogPlugin.open as jest.Mock).mockRejectedValue(new Error("Dialog failed"));
+    (dialogPlugin.open as jest.Mock).mockRejectedValue(
+      new Error("Dialog failed"),
+    );
 
     renderWithProviders(
       <OpenLibraryDialog
@@ -191,7 +197,9 @@ describe("OpenLibraryDialog", () => {
     await userEvent.click(browseButton);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue("/test/library/path")).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue("/test/library/path"),
+      ).toBeInTheDocument();
     });
 
     const openButton = screen.getByRole("button", { name: /Open Library/i });
@@ -230,7 +238,9 @@ describe("OpenLibraryDialog", () => {
     await userEvent.click(browseButton);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue("/test/library/path")).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue("/test/library/path"),
+      ).toBeInTheDocument();
     });
 
     rerender(
@@ -282,7 +292,9 @@ describe("OpenLibraryDialog", () => {
     await userEvent.click(browseButton);
 
     await waitFor(() => {
-      expect(screen.getByDisplayValue("/test/library/path")).toBeInTheDocument();
+      expect(
+        screen.getByDisplayValue("/test/library/path"),
+      ).toBeInTheDocument();
     });
 
     const openButton = screen.getByRole("button", { name: /Open Library/i });

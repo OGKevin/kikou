@@ -62,6 +62,7 @@ All library commands are prefixed with `library_` for clarity and follow a consi
 Opens a library from the specified URI and stores it in application state.
 
 **Example frontend usage:**
+
 ```typescript
 const libraryPath = "/home/user/.local/share/calibre/";
 await invoke("library_open", { uri: `calibre://${libraryPath}` });
@@ -90,6 +91,7 @@ Returns the total count of books in the currently open library.
 ## Send + Sync Implementation
 
 When implementing `BookLibrary` for thread-safe resources, implementations may need to declare `unsafe impl Send + Sync`. This is required when:
+
 1. The underlying resource provides thread-safe guarantees (SQLite, etc.)
 2. Operations are read-only or properly synchronized
 3. Reference counting (Arc) is used for safe sharing
@@ -177,6 +179,7 @@ For detailed error handling patterns, see `error.instructions.md`.
 ## Code Organization
 
 Keep the module organized:
+
 - Each library implementation in its own file
 - Shared types and trait in `base.rs`
 - Commands layer in `commands.rs`

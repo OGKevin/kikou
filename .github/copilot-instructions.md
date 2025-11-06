@@ -67,6 +67,7 @@ Or use:
 `devenv shell -- cargo test --workspace`
 
 To run tests for a specific crate:
+
 - `cargo test -p calibre_db` (calibre_db crate only)
 - `cargo test --manifest-path=src-tauri/Cargo.toml` (src-tauri crate only)
 

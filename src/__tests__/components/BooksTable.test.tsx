@@ -86,7 +86,9 @@ describe("BooksTable", () => {
       />,
     );
 
-    const searchInput = screen.getByTestId("books-search-input") as HTMLInputElement;
+    const searchInput = screen.getByTestId(
+      "books-search-input",
+    ) as HTMLInputElement;
     await userEvent.type(searchInput, "Another");
 
     expect(screen.getByText(mockBook2.title)).toBeInTheDocument();
@@ -119,7 +121,9 @@ describe("BooksTable", () => {
       />,
     );
 
-    const searchInput = screen.getByTestId("books-search-input") as HTMLInputElement;
+    const searchInput = screen.getByTestId(
+      "books-search-input",
+    ) as HTMLInputElement;
     await userEvent.type(searchInput, `title:"${mockBook.title}"`);
 
     expect(screen.getByText(mockBook.title)).toBeInTheDocument();
@@ -195,7 +199,9 @@ describe("BooksTable", () => {
       />,
     );
 
-    const searchInput = screen.getByTestId("books-search-input") as HTMLInputElement;
+    const searchInput = screen.getByTestId(
+      "books-search-input",
+    ) as HTMLInputElement;
     await userEvent.type(searchInput, "NonexistentBook");
 
     expect(screen.getByTestId("empty-state")).toBeInTheDocument();
@@ -245,7 +251,9 @@ describe("BooksTable", () => {
     );
 
     const bookCountElement = screen.getByTestId("book-count");
-    expect(bookCountElement).toHaveTextContent(`Showing ${books.length} of ${books.length} books`);
+    expect(bookCountElement).toHaveTextContent(
+      `Showing ${books.length} of ${books.length} books`,
+    );
   });
 
   it("formats array values with comma separation", () => {

@@ -7,9 +7,11 @@ applyTo: "src-tauri/calibre_db/**/*.rs"
 This is a standalone, publishable Rust crate providing type-safe access to Calibre SQLite databases based on Calibre's database schema (from `third_party/calibre/src/calibre/db`).
 
 ## Purpose
+
 Read and deserialize book metadata from Calibre's SQLite `metadata.db` format, supporting 10 core tables (books, authors, publishers, tags, series, data, comments, ratings, identifiers, languages) and their many-to-many relationships.
 
 ## Key Modules
+
 - `lib.rs`: Public API (`CalibreDatabase::open()`, `get_book()`, `all_books()`)
 - `models.rs`: Book, Author, Series, Tag, Identifier data structures with builder patterns
 - `schema.rs`: Database connection management and schema validation
@@ -17,6 +19,7 @@ Read and deserialize book metadata from Calibre's SQLite `metadata.db` format, s
 - `error.rs`: Error types (DatabaseError, NotFound, InvalidData, IoError, SerializationError)
 
 ## Development Guidelines
+
 - Query functions return `Result<T>` or `Result<Option<T>>` for missing relations
 - Use builder pattern (`with_authors()`, `with_tags()`, etc.) for complex object construction
 - Handle missing relations gracefully (some books lack series, publishers, ratings)
@@ -27,6 +30,7 @@ Read and deserialize book metadata from Calibre's SQLite `metadata.db` format, s
 ## Database Schema Notes
 
 ### Languages Table
+
 The `books_languages_link` table uses a foreign key relationship to the `languages` table:
 
 ```sql
@@ -45,17 +49,20 @@ CREATE TABLE books_languages_link (
 ```
 
 Language codes are stored as references (foreign keys) to the `languages` table, not as direct text columns. When querying languages:
+
 - Join `books_languages_link` with `languages` to fetch language codes
 - Use `ORDER BY item_order ASC` to maintain language order
 - Handle cases where books have no associated languages
 
 ## Testing
+
 - Unit tests in each module (models, error, schema, queries)
 - Integration tests in `tests/integration_tests.rs` with real SQLite databases
 - All tests must create temporary databases; no file I/O to real libraries
 - Verify both presence and absence of optional relations
 
 ## Build & Test
+
 ```
 cargo check -p calibre_db    # Verify compilation
 cargo fmt                     # Format code (or cargo fmt -p calibre_db)
@@ -66,6 +73,7 @@ cargo test -p calibre_db --test integration_tests  # Integration tests
 ```
 
 Alternatively, run from the workspace root or use `--workspace` to check all crates:
+
 ```
 cargo check --workspace
 cargo test --workspace
@@ -75,6 +83,7 @@ cargo clippy --workspace
 ## Troubleshooting
 
 ### Schema Verification
+
 If you encounter unexpected column errors or schema-related issues, ask the user for their Calibre database path, then verify the actual database schema with:
 
 ```bash

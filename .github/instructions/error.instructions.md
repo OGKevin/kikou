@@ -7,7 +7,9 @@ applyTo: "src-tauri/**/*.rs"
 Consistent error handling across all Rust modules using enums for type safety and clarity.
 
 ## Purpose
+
 Provide a unified error handling strategy that:
+
 - Prioritizes enum error types for domain-specific errors
 - Ensures Tauri commands return the top-level `AppError` type for IPC communication
 - Uses specific error enums for internal library functions
@@ -16,6 +18,7 @@ Provide a unified error handling strategy that:
 ## Error Hierarchy
 
 ### Tauri Commands Layer
+
 Tauri commands should always return `Result<T, AppError>` to ensure proper serialization for IPC:
 
 ```rust
@@ -26,6 +29,7 @@ async fn fetch_book(lib: State<Arc<dyn BookLibrary>>, id: u32) -> Result<Book, A
 ```
 
 ### Internal Library Layer
+
 Internal functions should use specific error enums for their domain:
 
 ```rust
@@ -41,9 +45,11 @@ pub fn get_book_internal(id: u32) -> Result<Book, LibraryError> {
 ```
 
 ### AppError - Top-Level Error Type
+
 The unified error enum for converting all domain-specific errors to IPC-compatible format.
 
 **Variants:**
+
 - `LibraryError(String)`: General library operation failures (path validation, initialization)
 - `BookNotFound(String)`: Specific book not found by ID or query
 - `DatabaseError(String)`: Underlying SQLite or database failures
@@ -52,6 +58,7 @@ The unified error enum for converting all domain-specific errors to IPC-compatib
 - `ArchiveError(String)`: Archive/compression operation failures
 
 ## Error Conversion
+
 Implement `From` traits to convert domain-specific errors to `AppError`:
 
 ```rust
@@ -79,6 +86,7 @@ impl From<serde_json::Error> for AppError {
 ```
 
 ## Guidelines
+
 - **Prioritize enums**: Use specific error enums for internal operations (e.g., `LibraryError`, `ArchiveError`)
 - **Tauri boundary**: Always return `AppError` from Tauri commands
 - **Error conversion**: Implement `From` traits to bridge domain-specific errors to `AppError`

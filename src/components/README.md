@@ -9,6 +9,7 @@ This directory contains reusable React components for the Calibre library manage
 Displays a searchable, filterable table of books with customizable columns.
 
 **Features:**
+
 - Dynamic column visibility and reordering
 - Advanced search with field-specific queries (e.g., `title:"search term"`)
 - Free-text search across multiple columns
@@ -19,6 +20,7 @@ Displays a searchable, filterable table of books with customizable columns.
 - Loading state
 
 **Props:**
+
 ```typescript
 interface BooksTableProps {
   books: Book[];
@@ -32,12 +34,14 @@ interface BooksTableProps {
 ```
 
 **Search Syntax:**
+
 - Free text: `adventure` - searches across all text columns
 - Field specific: `title:"The Hobbit"` - searches only title field
 - Multiple terms: `title:"Hobbit" author:"Tolkien"` - must match all terms
 - Case insensitive and trimmed automatically
 
 **Example:**
+
 ```tsx
 import { BooksTable } from "@/components/BooksTable";
 
@@ -49,7 +53,7 @@ import { BooksTable } from "@/components/BooksTable";
   onResetColumns={resetColumns}
   isLoading={false}
   error={null}
-/>
+/>;
 ```
 
 ### BookCoverSkeleton
@@ -57,12 +61,14 @@ import { BooksTable } from "@/components/BooksTable";
 Displays a loading skeleton for book covers.
 
 **Features:**
+
 - Wave animation
 - Customizable width and height
 - Rounded corners
 - Centered display
 
 **Props:**
+
 ```typescript
 interface BookCoverSkeletonProps {
   width?: number | string;
@@ -71,10 +77,11 @@ interface BookCoverSkeletonProps {
 ```
 
 **Example:**
+
 ```tsx
 import { BookCoverSkeleton } from "@/components/BookCoverSkeleton";
 
-<BookCoverSkeleton width={60} height={90} />
+<BookCoverSkeleton width={60} height={90} />;
 ```
 
 ### OpenLibraryDialog
@@ -82,6 +89,7 @@ import { BookCoverSkeleton } from "@/components/BookCoverSkeleton";
 Modal dialog for selecting and opening a Calibre library.
 
 **Features:**
+
 - File browser integration using Tauri
 - Path validation
 - Error handling and display
@@ -90,6 +98,7 @@ Modal dialog for selecting and opening a Calibre library.
 - Info alert about requirements
 
 **Props:**
+
 ```typescript
 interface OpenLibraryDialogProps {
   open: boolean;
@@ -100,6 +109,7 @@ interface OpenLibraryDialogProps {
 ```
 
 **Example:**
+
 ```tsx
 import { OpenLibraryDialog } from "@/components/OpenLibraryDialog";
 
@@ -110,7 +120,7 @@ const [dialogOpen, setDialogOpen] = useState(false);
   onClose={() => setDialogOpen(false)}
   onLibrarySelected={handleLibrarySelected}
   isLoading={false}
-/>
+/>;
 ```
 
 ## Hooks
@@ -120,6 +130,7 @@ const [dialogOpen, setDialogOpen] = useState(false);
 Manages library state and operations including opening libraries and loading books.
 
 **Returns:**
+
 ```typescript
 interface UseLibraryReturn {
   books: Book[];
@@ -133,6 +144,7 @@ interface UseLibraryReturn {
 ```
 
 **Features:**
+
 - Automatic localStorage persistence
 - Auto-loads saved library on mount
 - Auto-loads books after opening library
@@ -140,6 +152,7 @@ interface UseLibraryReturn {
 - Loading state management
 
 **Example:**
+
 ```tsx
 import { useLibrary } from "@/hooks/useLibrary";
 
@@ -159,6 +172,7 @@ const {
 Manages table column visibility and ordering with localStorage persistence.
 
 **Returns:**
+
 ```typescript
 interface UseTableColumnsReturn {
   columns: ColumnConfig[];
@@ -170,6 +184,7 @@ interface UseTableColumnsReturn {
 ```
 
 **Features:**
+
 - localStorage persistence
 - Default column configuration
 - Toggle visibility
@@ -178,6 +193,7 @@ interface UseTableColumnsReturn {
 - Filter visible columns
 
 **Default Columns:**
+
 - cover (visible)
 - title (visible)
 - authors (visible)
@@ -191,6 +207,7 @@ interface UseTableColumnsReturn {
 - rating (hidden)
 
 **Example:**
+
 ```tsx
 import { useTableColumns } from "@/hooks/useTableColumns";
 
@@ -256,30 +273,18 @@ import { useState } from "react";
 
 export function LibraryPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
-  
-  const {
-    books,
-    isLoading,
-    error,
-    libraryPath,
-    openLibrary,
-    isLibraryOpen,
-  } = useLibrary();
 
-  const {
-    columns,
-    toggleColumnVisibility,
-    reorderColumns,
-    resetColumns,
-  } = useTableColumns();
+  const { books, isLoading, error, libraryPath, openLibrary, isLibraryOpen } =
+    useLibrary();
+
+  const { columns, toggleColumnVisibility, reorderColumns, resetColumns } =
+    useTableColumns();
 
   if (!isLibraryOpen) {
     return (
       <>
-        <button onClick={() => setDialogOpen(true)}>
-          Open Library
-        </button>
-        
+        <button onClick={() => setDialogOpen(true)}>Open Library</button>
+
         <OpenLibraryDialog
           open={dialogOpen}
           onClose={() => setDialogOpen(false)}
@@ -292,7 +297,7 @@ export function LibraryPage() {
   return (
     <>
       <h1>Library: {libraryPath}</h1>
-      
+
       <BooksTable
         books={books}
         columns={columns}
@@ -316,6 +321,7 @@ pnpm test
 ```
 
 Test files are located in `src/__tests__/`:
+
 - `components/BooksTable.test.tsx` - BooksTable component tests
 - `components/OpenLibraryDialog.test.tsx` - OpenLibraryDialog component tests
 - `hooks/useLibrary.test.ts` - useLibrary hook tests
