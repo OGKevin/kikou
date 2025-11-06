@@ -23,14 +23,32 @@ impl DatabaseConnection {
     }
 
     pub fn prepare<'a>(&'a self, query: &str) -> Result<rusqlite::Statement<'a>> {
-        self.conn
-            .prepare(query)
-            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+        self.prepare_validated(query)
     }
 
-    pub fn execute(&self, query: &str, params: &[&dyn rusqlite::ToSql]) -> Result<usize> {
+    /// Validates that a query is read-only (SELECT statement only)
+    fn is_read_only_query(query: &str) -> bool {
+        let trimmed = query.trim_start().to_uppercase();
+        trimmed.starts_with("SELECT") || trimmed.starts_with("WITH")
+    }
+
+    /// Internal method to prepare a statement with read-only validation in debug builds
+    fn prepare_validated<'a>(&'a self, query: &str) -> Result<rusqlite::Statement<'a>> {
+        #[cfg(debug_assertions)]
+        {
+            if !Self::is_read_only_query(query) {
+                return Err(CalibreDbError::InvalidData(format!(
+                    "Only SELECT queries are allowed. Got: {}",
+                    query
+                        .split_whitespace()
+                        .take(3)
+                        .collect::<Vec<_>>()
+                        .join(" ")
+                )));
+            }
+        }
         self.conn
-            .execute(query, params)
+            .prepare(query)
             .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
     }
 }
@@ -82,5 +100,73 @@ mod tests {
     fn test_database_connection_creation() {
         let result = create_test_db();
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_read_only_query_validation() {
+        // Valid SELECT queries
+        assert!(DatabaseConnection::is_read_only_query(
+            "SELECT * FROM books"
+        ));
+        assert!(DatabaseConnection::is_read_only_query(
+            "  SELECT id FROM authors"
+        ));
+        assert!(DatabaseConnection::is_read_only_query(
+            "select * from books"
+        ));
+        assert!(DatabaseConnection::is_read_only_query(
+            "WITH cte AS (SELECT 1) SELECT * FROM cte"
+        ));
+
+        // Invalid non-SELECT queries
+        assert!(!DatabaseConnection::is_read_only_query(
+            "INSERT INTO books VALUES (1)"
+        ));
+        assert!(!DatabaseConnection::is_read_only_query(
+            "UPDATE books SET title = 'test'"
+        ));
+        assert!(!DatabaseConnection::is_read_only_query("DELETE FROM books"));
+        assert!(!DatabaseConnection::is_read_only_query("DROP TABLE books"));
+        assert!(!DatabaseConnection::is_read_only_query(
+            "CREATE TABLE test (id INT)"
+        ));
+    }
+
+    #[test]
+    #[cfg(debug_assertions)]
+    fn test_prepare_rejects_write_operations() {
+        let (db_conn, _temp_file) = create_test_db().unwrap();
+
+        // SELECT should work
+        let result = db_conn.prepare("SELECT * FROM books");
+        assert!(result.is_ok());
+
+        // INSERT should fail in debug builds
+        let result = db_conn.prepare("INSERT INTO books (title) VALUES ('test')");
+        assert!(result.is_err());
+        if let Err(CalibreDbError::InvalidData(msg)) = result {
+            assert!(msg.contains("Only SELECT queries are allowed"));
+        } else {
+            panic!("Expected InvalidData error");
+        }
+
+        // UPDATE should fail in debug builds
+        let result = db_conn.prepare("UPDATE books SET title = 'test'");
+        assert!(result.is_err());
+
+        // DELETE should fail in debug builds
+        let result = db_conn.prepare("DELETE FROM books");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_query_row_with_select() {
+        let (db_conn, _temp_file) = create_test_db().unwrap();
+
+        // query_row should work with SELECT (it doesn't go through prepare, so no validation)
+        let result: Result<i32> =
+            db_conn.query_row("SELECT COUNT(*) FROM books", &[], |row| Ok(row.get(0)?));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 0);
     }
 }

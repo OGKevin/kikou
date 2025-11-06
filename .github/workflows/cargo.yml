@@ -64,7 +64,7 @@ jobs:
           Start-Process -FilePath "MicrosoftEdgeWebview2Setup.exe" -ArgumentList "/silent", "/install" -Wait
         shell: powershell
       - name: Run cargo check
-        run: cargo check 
+        run: cargo check --workspace
 
   test:
     needs: detect-changes
