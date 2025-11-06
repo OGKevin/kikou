@@ -19,7 +19,7 @@ function AppContent({ Component, pageProps, router }) {
   return getPageWrapper({ path, pathname: router.pathname, content });
 }
 
-export default function App(appProps: AppProps) {
+export default function App(appProps: AppProps): React.ReactElement {
   return (
     <CssVarsProvider theme={theme} defaultMode="system">
       <ThemeProvider>

@@ -51,6 +51,9 @@ importers:
       '@eslint/js':
         specifier: ^9.38.0
         version: 9.38.0
+      '@github/copilot':
+        specifier: ^0.0.351
+        version: 0.0.351
       '@testing-library/jest-dom':
         specifier: ^6.9.1
         version: 6.9.1
@@ -423,6 +426,11 @@ packages:
 
   '@floating-ui/utils@0.2.10':
     resolution: {integrity: sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==}
+
+  '@github/copilot@0.0.351':
+    resolution: {integrity: sha512-a3FgxgOvTi3uDVpcD0nxlTwKAGvILeSdf4NKYOAgSQ6HGANJhDGsBtk6O9nUnUAoskkGDDn7vrENM9svOs3sUw==}
+    engines: {node: '>=22'}
+    hasBin: true
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -3614,6 +3622,8 @@ snapshots:
       react-dom: 19.2.0(react@19.2.0)
 
   '@floating-ui/utils@0.2.10': {}
+
+  '@github/copilot@0.0.351': {}
 
   '@humanfs/core@0.19.1': {}
 

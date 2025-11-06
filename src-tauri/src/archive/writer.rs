@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 use std::fs;
 use std::io::{BufReader, BufWriter, Write};
-use zip::CompressionMethod;
 use zip::write::FileOptions;
+use zip::CompressionMethod;
 
 use crate::comicinfo::{ComicInfo, ComicPageInfo, ComicPageType, Pages};
 use log::debug;
@@ -265,8 +265,8 @@ mod tests {
     use crate::comicinfo::{ComicInfo, ComicPageType};
     use std::collections::HashMap;
     use std::io::{Read, Write};
-    use zip::CompressionMethod as ZipCompressionMethod;
     use zip::write::FileOptions as ZipFileOptions;
+    use zip::CompressionMethod as ZipCompressionMethod;
 
     fn test_path(name: &str) -> String {
         let mut dir = std::env::temp_dir();

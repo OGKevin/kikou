@@ -66,3 +66,39 @@ textarea,
   -moz-user-select: text !important;
   -ms-user-select: text !important;
 }
+
+/* Enable scrolling for table container but not cells */
+.table-container {
+  overflow: auto !important;
+}
+
+table td,
+table th {
+  overflow: hidden !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Column resize handle */
+.resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  cursor: col-resize;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+.resize-handle:hover {
+  background-color: var(--joy-palette-primary-500, #0b6bcb);
+}
+
+.resize-handle.resizing {
+  background-color: var(--joy-palette-primary-600, #185ea5);
+}

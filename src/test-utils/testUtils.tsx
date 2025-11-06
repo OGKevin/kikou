@@ -27,6 +27,7 @@ import React from "react";
 import { render } from "@testing-library/react";
 import { CssVarsProvider } from "@mui/joy";
 import { ThemeProvider } from "../contexts/ThemeContext";
+import { BookCoverProvider } from "../contexts/BookCoverContext";
 
 // Mock Tauri APIs
 jest.mock("@tauri-apps/api/core", () => ({
@@ -47,7 +48,9 @@ jest.mock("@tauri-apps/api/app", () => ({
 export function renderWithProviders(ui: React.ReactElement) {
   return render(
     <CssVarsProvider>
-      <ThemeProvider>{ui}</ThemeProvider>
+      <ThemeProvider>
+        <BookCoverProvider>{ui}</BookCoverProvider>
+      </ThemeProvider>
     </CssVarsProvider>,
   );
 }

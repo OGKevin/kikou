@@ -1,4 +1,4 @@
-use super::types::{ComicPageType, default_minus_one, is_false, is_minus_one, is_zero_i64};
+use super::types::{default_minus_one, is_false, is_minus_one, is_zero_i64, ComicPageType};
 use serde::Deserialize;
 
 mod comic_page_type_option_serde {
@@ -193,8 +193,8 @@ impl serde::Serialize for Pages {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use quick_xml::Reader;
     use quick_xml::events::Event;
+    use quick_xml::Reader;
 
     #[test]
     fn test_page_attribute_order() {

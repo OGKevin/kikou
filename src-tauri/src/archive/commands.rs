@@ -2,9 +2,9 @@ use crate::archive::manager::start_archive_watch_for_creation;
 
 use super::manager::{start_archive_watcher, stop_archive_watcher};
 use super::reader::{get_file_data, read_archive, stream_file_data_from_archive};
-use super::types::{LoadCbzResponse, ToErrorResponse, is_image_file};
+use super::types::{is_image_file, LoadCbzResponse, ToErrorResponse};
 use super::writer::{delete_comicinfo_xml, save_comicinfo_xml_impl, save_page_settings_impl};
-use base64::{Engine, engine::general_purpose::STANDARD as BASE64_STANDARD};
+use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
 use log::debug;
 use serde::Serialize;
 use std::collections::HashMap;

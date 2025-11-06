@@ -1,7 +1,8 @@
 use super::page::Pages;
 use super::types::{
-    AgeRating, Manga, YesNo, default_age_rating, default_manga, default_minus_one, default_yes_no,
-    is_minus_one, is_unknown_age_rating, is_unknown_manga, is_unknown_yes_no, is_zero_i32,
+    default_age_rating, default_manga, default_minus_one, default_yes_no, is_minus_one,
+    is_unknown_age_rating, is_unknown_manga, is_unknown_yes_no, is_zero_i32, AgeRating, Manga,
+    YesNo,
 };
 use crate::archive::types::{ErrorResponse, ErrorResponseType, ToErrorResponse};
 use quick_xml::events::Event;

@@ -93,8 +93,8 @@ mod tests {
     use super::*;
     use std::io::Write;
     use std::sync::{Arc, Mutex};
-    use zip::ZipWriter;
     use zip::write::FileOptions;
+    use zip::ZipWriter;
 
     struct TestArchive {
         _temp_file: tempfile::NamedTempFile,

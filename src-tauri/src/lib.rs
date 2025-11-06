@@ -1,10 +1,15 @@
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 mod archive;
 mod comicinfo;
+pub mod error;
+pub mod library;
+
+use library::commands::LibraryState;
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .manage(LibraryState::default())
         .invoke_handler(tauri::generate_handler![
             archive::load_cbz,
             archive::unload_cbz,
@@ -19,6 +24,11 @@ pub fn run() {
             comicinfo::commands::get_bookmarked_pages,
             comicinfo::commands::validate_comicinfo_xml,
             comicinfo::commands::format_comicinfo_xml,
+            library::commands::library_open,
+            library::commands::library_get_all_books,
+            library::commands::library_get_book,
+            library::commands::library_get_book_count,
+            library::commands::library_stream_book_covers,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
