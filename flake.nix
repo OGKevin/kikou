@@ -24,7 +24,7 @@
 
           src = ./.;
 
-          cargoHash = "sha256-cp7EFD1RI/qTkmpqritTvjsUCQq8MVWCVYXQwoNNj6g=";
+          cargoHash = "sha256-c5ck7uzDC1d5EMMSr9caYZFoJ/GjQ4aIngoTjaFkbhw=";
 
           pnpmDeps = pkgs.pnpm.fetchDeps {
             inherit (finalAttrs) pname version src;
@@ -47,9 +47,6 @@
             pkgs.openssl
             pkgs.webkitgtk_4_1
           ];
-
-          cargoRoot = "src-tauri";
-          buildAndTestSubdir = cargoRoot;
 
           # installPhase = ''
           #   mkdir -p $out/bin
