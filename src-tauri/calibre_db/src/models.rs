@@ -281,6 +281,23 @@ impl<'a> BookBuilder<'a> {
 
     pub fn build(mut self) -> crate::error::Result<Book> {
         if let Some(db) = self.db {
+            // Sequential queries are used here instead of a single complex JOIN.
+            // This implements a pragmatic trade-off between performance and maintainability.
+            //
+            // Why sequential queries instead of a single complex JOIN?
+            //
+            // 1. **Cartesian Product Complexity**: Multiple many-to-many JOINs create a cartesian
+            //    product that requires complex aggregation logic to deduplicate results.
+            // 2. **Maintainability**: Sequential targeted queries are simpler to understand and debug.
+            // 3. **Performance**: In practice, sequential queries perform well due to SQLite's
+            //    query optimization and caching. The number of queries is fixed (at most 9),
+            //    not dependent on result set size.
+            //
+            // When to Consider a Single Query Approach:
+            // If performance profiling shows N+1 query overhead is significant, consider:
+            // - Using UNION queries to avoid cartesian products
+            // - Building a smarter aggregation layer
+            // - Caching frequently accessed relations
             if self.fetch_authors {
                 self.authors = db.fetch_book_authors(self.id)?;
             }
