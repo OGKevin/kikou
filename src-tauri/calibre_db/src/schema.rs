@@ -35,42 +35,6 @@ impl DatabaseConnection {
     }
 }
 
-pub struct Schema;
-
-impl Schema {
-    pub fn validate_books_table(conn: &DatabaseConnection) -> Result<()> {
-        conn.query_row(
-            "SELECT id, title, sort, timestamp, pubdate, series_index, author_sort, isbn, lccn, path FROM books LIMIT 1",
-            &[],
-            |_| Ok(()),
-        )
-        .or_else(|_| {
-            Err(CalibreDbError::InvalidData(
-                "books table does not have expected schema".to_string(),
-            ))
-        })
-    }
-
-    pub fn validate_authors_table(conn: &DatabaseConnection) -> Result<()> {
-        conn.query_row(
-            "SELECT id, name, sort FROM authors LIMIT 1",
-            &[],
-            |_| Ok(()),
-        )
-        .or_else(|_| {
-            Err(CalibreDbError::InvalidData(
-                "authors table does not have expected schema".to_string(),
-            ))
-        })
-    }
-
-    pub fn validate_database(conn: &DatabaseConnection) -> Result<()> {
-        Self::validate_books_table(conn)?;
-        Self::validate_authors_table(conn)?;
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

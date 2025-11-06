@@ -17,7 +17,7 @@ mod tests {
 
     #[test]
     fn test_app_error_variants() {
-        let errors = vec![
+        let errors = [
             AppError::LibraryError("lib error".to_string()),
             AppError::BookNotFound("not found".to_string()),
             AppError::DatabaseError("db error".to_string()),

@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Book {
@@ -240,7 +240,11 @@ mod tests {
     #[test]
     fn test_book_builder_chain() {
         let now = Utc::now();
-        let authors = vec![Author::new(1, "Test Author".to_string(), "Author, Test".to_string())];
+        let authors = vec![Author::new(
+            1,
+            "Test Author".to_string(),
+            "Author, Test".to_string(),
+        )];
         let tags = vec![Tag::new(1, "Fiction".to_string())];
 
         let book = Book::new(
@@ -293,7 +297,11 @@ mod tests {
     #[test]
     fn test_book_metadata_from_book() {
         let now = Utc::now();
-        let authors = vec![Author::new(1, "Test Author".to_string(), "Author, Test".to_string())];
+        let authors = vec![Author::new(
+            1,
+            "Test Author".to_string(),
+            "Author, Test".to_string(),
+        )];
         let tags = vec![Tag::new(1, "Fiction".to_string())];
         let series = Some(Series::new(1, "Test Series".to_string()));
 

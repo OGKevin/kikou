@@ -1,10 +1,10 @@
 mod error;
 mod models;
-mod schema;
 mod queries;
+mod schema;
 
 pub use error::{CalibreDbError, Result};
-pub use models::{Book, Author, Series, Tag, Identifier, BookMetadata};
+pub use models::{Author, Book, BookMetadata, Identifier, Series, Tag};
 pub use schema::DatabaseConnection;
 
 use std::path::Path;
@@ -12,6 +12,12 @@ use std::path::Path;
 pub struct CalibreDatabase {
     conn: DatabaseConnection,
 }
+
+// SAFETY: CalibreDatabase wraps rusqlite::Connection, which is thread-safe.
+// rusqlite uses SQLite's built-in locking mechanisms to ensure safe concurrent access.
+// All database operations in this crate are read-only, preventing data races.
+unsafe impl Send for CalibreDatabase {}
+unsafe impl Sync for CalibreDatabase {}
 
 impl CalibreDatabase {
     pub fn open<P: AsRef<Path>>(path: P) -> Result<Self> {

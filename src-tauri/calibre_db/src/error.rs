@@ -1,5 +1,5 @@
-use std::fmt;
 use rusqlite;
+use std::fmt;
 
 #[derive(Debug)]
 pub enum CalibreDbError {

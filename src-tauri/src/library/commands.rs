@@ -125,17 +125,9 @@ pub async fn library_get_book_count(state: State<'_, LibraryState>) -> Result<u3
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase", tag = "event", content = "data")]
 pub enum CoverStreamEvent {
-    Started {
-        total_books: usize,
-    },
-    Cover {
-        book_id: u32,
-        data_base64: String,
-    },
-    Error {
-        book_id: u32,
-        message: String,
-    },
+    Started { total_books: usize },
+    Cover { book_id: u32, data_base64: String },
+    Error { book_id: u32, message: String },
     Finished,
 }
 
