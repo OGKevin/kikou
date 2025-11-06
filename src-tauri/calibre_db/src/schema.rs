@@ -19,65 +19,23 @@ impl DatabaseConnection {
     {
         self.conn
             .query_row(query, params, f)
-            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
+            .map_err(CalibreDbError::from)
     }
 
-    pub fn prepare(&self, query: &str) -> Result<rusqlite::Statement> {
-        self.conn
-            .prepare(query)
-            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
-    }
-
-    pub fn execute(&self, query: &str, params: &[&dyn rusqlite::ToSql]) -> Result<usize> {
-        self.conn
-            .execute(query, params)
-            .map_err(|e| CalibreDbError::DatabaseError(e.to_string()))
-    }
-}
-
-pub struct Schema;
-
-impl Schema {
-    pub fn validate_books_table(conn: &DatabaseConnection) -> Result<()> {
-        conn.query_row(
-            "SELECT id, title, sort, timestamp, pubdate, series_index, author_sort, isbn, lccn, path FROM books LIMIT 1",
-            &[],
-            |_| Ok(()),
-        )
-        .or_else(|_| {
-            Err(CalibreDbError::InvalidData(
-                "books table does not have expected schema".to_string(),
-            ))
-        })
-    }
-
-    pub fn validate_authors_table(conn: &DatabaseConnection) -> Result<()> {
-        conn.query_row(
-            "SELECT id, name, sort FROM authors LIMIT 1",
-            &[],
-            |_| Ok(()),
-        )
-        .or_else(|_| {
-            Err(CalibreDbError::InvalidData(
-                "authors table does not have expected schema".to_string(),
-            ))
-        })
-    }
-
-    pub fn validate_database(conn: &DatabaseConnection) -> Result<()> {
-        Self::validate_books_table(conn)?;
-        Self::validate_authors_table(conn)?;
-        Ok(())
+    pub fn prepare<'a>(&'a self, query: &str) -> Result<rusqlite::Statement<'a>> {
+        self.conn.prepare(query).map_err(CalibreDbError::from)
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::CalibreDbError;
+
     use super::*;
     use tempfile::NamedTempFile;
 
     fn create_test_db() -> Result<(DatabaseConnection, NamedTempFile)> {
-        let temp_file = NamedTempFile::new().map_err(|e| CalibreDbError::from(e))?;
+        let temp_file = NamedTempFile::new().map_err(CalibreDbError::from)?;
         let path = temp_file.path().to_path_buf();
 
         let conn = Connection::open(&path)?;
@@ -118,5 +76,15 @@ mod tests {
     fn test_database_connection_creation() {
         let result = create_test_db();
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn test_query_row_with_select() {
+        let (db_conn, _temp_file) = create_test_db().unwrap();
+
+        let result: Result<i32> =
+            db_conn.query_row("SELECT COUNT(*) FROM books", &[], |row| row.get(0));
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 0);
     }
 }

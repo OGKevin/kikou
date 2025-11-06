@@ -1,9 +1,8 @@
 use std::fmt;
-use rusqlite;
 
 #[derive(Debug)]
 pub enum CalibreDbError {
-    DatabaseError(String),
+    DatabaseError(rusqlite::Error),
     NotFound(String),
     InvalidData(String),
     IoError(String),
@@ -13,7 +12,7 @@ pub enum CalibreDbError {
 impl fmt::Display for CalibreDbError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            CalibreDbError::DatabaseError(msg) => write!(f, "Database error: {}", msg),
+            CalibreDbError::DatabaseError(err) => write!(f, "Database error: {}", err),
             CalibreDbError::NotFound(msg) => write!(f, "Not found: {}", msg),
             CalibreDbError::InvalidData(msg) => write!(f, "Invalid data: {}", msg),
             CalibreDbError::IoError(msg) => write!(f, "IO error: {}", msg),
@@ -26,7 +25,7 @@ impl std::error::Error for CalibreDbError {}
 
 impl From<rusqlite::Error> for CalibreDbError {
     fn from(err: rusqlite::Error) -> Self {
-        CalibreDbError::DatabaseError(err.to_string())
+        CalibreDbError::DatabaseError(err)
     }
 }
 
@@ -43,3 +42,20 @@ impl From<serde_json::Error> for CalibreDbError {
 }
 
 pub type Result<T> = std::result::Result<T, CalibreDbError>;
+
+/// Extension trait to convert `QueryReturnedNoRows` errors into `Ok(None)`.
+/// This is useful for queries that may or may not return a row.
+pub trait OptionalResult<T> {
+    /// Converts a database query result to an `Option`, treating `QueryReturnedNoRows` as `None`.
+    fn optional(self) -> Result<Option<T>>;
+}
+
+impl<T> OptionalResult<T> for Result<T> {
+    fn optional(self) -> Result<Option<T>> {
+        match self {
+            Ok(value) => Ok(Some(value)),
+            Err(CalibreDbError::DatabaseError(rusqlite::Error::QueryReturnedNoRows)) => Ok(None),
+            Err(e) => Err(e),
+        }
+    }
+}

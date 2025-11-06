@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod integration_tests {
-    use calibre_db::CalibreDatabase;
+    use calibre_db::{CalibreDatabase, ReadOnlyDatabase};
     use rusqlite::Connection;
     use tempfile::NamedTempFile;
 

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Box,
   Input,
@@ -227,12 +227,16 @@ export function BooksTable({
       const bStr = formatCellValue(bValue).toLowerCase();
 
       if (aStr < bStr) return sortDirection === "asc" ? -1 : 1;
+
       if (aStr > bStr) return sortDirection === "asc" ? 1 : -1;
+
       return 0;
     });
   }, [filteredBooks, sortColumn, sortDirection]);
 
-  const handleColumnMenuOpen = (event: React.MouseEvent<HTMLButtonElement>): void => {
+  const handleColumnMenuOpen = (
+    event: React.MouseEvent<HTMLButtonElement>,
+  ): void => {
     setColumnMenuAnchor(event.currentTarget);
   };
 
@@ -299,6 +303,7 @@ export function BooksTable({
     if (columnId === "cover") {
       return 100;
     }
+
     return columnWidths[columnId] ?? 300;
   };
 
@@ -329,7 +334,11 @@ export function BooksTable({
 
   if (isLoading) {
     return (
-      <Typography data-testid="loading-state" level="body-md" sx={{ textAlign: "center", py: 3 }}>
+      <Typography
+        data-testid="loading-state"
+        level="body-md"
+        sx={{ textAlign: "center", py: 3 }}
+      >
         Loading books...
       </Typography>
     );
@@ -399,14 +408,21 @@ export function BooksTable({
 
         <Divider />
 
-        <MenuItem data-testid="reset-columns-button" onClick={() => onResetColumns()}>
+        <MenuItem
+          data-testid="reset-columns-button"
+          onClick={() => onResetColumns()}
+        >
           Reset to Default
         </MenuItem>
       </Menu>
 
       {/* Table */}
       {filteredBooks.length === 0 ? (
-        <Typography data-testid="empty-state" level="body-md" sx={{ textAlign: "center", py: 3 }}>
+        <Typography
+          data-testid="empty-state"
+          level="body-md"
+          sx={{ textAlign: "center", py: 3 }}
+        >
           No books found
         </Typography>
       ) : (
@@ -479,9 +495,7 @@ export function BooksTable({
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                       <span>{col.label}</span>
                       {col.id !== "cover" && sortColumn === col.id && (
-                        <span>
-                          {sortDirection === "asc" ? "↑" : "↓"}
-                        </span>
+                        <span>{sortDirection === "asc" ? "↑" : "↓"}</span>
                       )}
                     </Box>
                     {col.id !== "cover" && (
