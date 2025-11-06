@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Book } from "@/types/book";
-import {
-  libraryOpen,
-  libraryGetAllBooks,
-} from "@/api/library";
+import { libraryOpen, libraryGetAllBooks } from "@/api/library";
 import { useStreamBookCovers } from "./useStreamBookCovers";
 
 const LIBRARY_PATH_KEY = "kikou_library_path";
@@ -50,6 +47,9 @@ export function useLibrary(): UseLibraryReturn {
 
   // Open library when path is set
   const openLibrary = useCallback(async (path: string) => {
+    // Mark that auto-load should not trigger for this manual open
+    autoLoadAttemptedRef.current = true;
+
     try {
       setIsLoading(true);
       setError(null);
