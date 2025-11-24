@@ -16,7 +16,7 @@ jobs:
     outputs:
       frontend-changed: ${{ steps.changed-frontend-files.outputs.any_changed }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Get changed frontend files
@@ -41,7 +41,7 @@ jobs:
     if: needs.detect-changes.outputs.frontend-changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -61,7 +61,7 @@ jobs:
     if: needs.detect-changes.outputs.frontend-changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:

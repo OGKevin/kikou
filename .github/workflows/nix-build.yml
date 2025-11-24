@@ -16,7 +16,7 @@ jobs:
     outputs:
       nix-changed: ${{ steps.changed-nix-files.outputs.any_changed }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Get changed Nix files
@@ -39,7 +39,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: nixbuild/nix-quick-install-action@v34
       - name: Setup Cachix
         uses: cachix/cachix-action@v16

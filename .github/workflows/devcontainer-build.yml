@@ -16,7 +16,7 @@ jobs:
     outputs:
       devcontainer-changed: ${{ steps.changed-devcontainer-files.outputs.any_changed }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Get changed devcontainer files
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
       - name: Install Docker
         uses: docker/setup-buildx-action@v3
       - name: Build devcontainer
