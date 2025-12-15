@@ -56,7 +56,7 @@ jobs:
           includeDebug: false
           includeRelease: true
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.platform }}-app
           path: src-tauri/target/release/bundle/
